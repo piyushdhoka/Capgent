@@ -1,0 +1,11 @@
+name = "capagent-api"
+main = "src/index.ts"
+compatibility_date = "2026-03-06"
+
+[vars]
+CAPAGENT_CHALLENGE_TTL_SECONDS = "30"
+CAPAGENT_PROOF_TTL_SECONDS = "300"
+CAPAGENT_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
+CAPAGENT_PUBLIC_BASE_URL = "http://localhost:8787"
+CAPAGENT_JWT_SECRET = "dev-secret-change-me"
+

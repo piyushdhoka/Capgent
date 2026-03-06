@@ -1,0 +1,23 @@
+{
+  "name": "@capagent/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --port 8787",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "sample:verify": "bun run scripts/sample-bun.ts"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.35.3",
+    "@capagent/sdk": "0.0.0",
+    "hono": "^4.9.1",
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260305.1",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.13.2"
+  }
+}
