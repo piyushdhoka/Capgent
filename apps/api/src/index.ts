@@ -1,13 +1,25 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Env } from "./config";
-import { forceInMemory, getChallengeTtlSeconds, getCorsOrigins, getProofTtlSeconds } from "./config";
+import {
+  allowPublicRegistration,
+  forceInMemory,
+  getAdminApiKey,
+  getChallengeTtlSeconds,
+  getCorsOrigins,
+  getIdentityTtlSeconds,
+  getProofTtlSeconds
+} from "./config";
 import { generateChallenge } from "./challenge/generate";
 import type { StoredChallenge } from "./challenge/types";
 import { applySteps, hmacSha256Hex, sha256Hex } from "./challenge/eval";
 import { canUseRedis, createRedis } from "./storage/redis";
 import { createInMemoryStore, createRedisStore } from "./storage/store";
-import { signProofJwt, verifyProofJwt } from "./auth/jwt";
+import { AgentIdentityClaims, signIdentityJwt, signProofJwt, verifyIdentityJwt, verifyProofJwt } from "./auth/jwt";
+import type { AgentRecord } from "./identity/store";
+import { getAgentById, revokeAgent, saveAgent } from "./identity/store";
+import type { GuestbookEntry } from "./guestbook/store";
+import { addGuestbookEntry, getGuestbookEntries } from "./guestbook/store";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -23,6 +35,24 @@ type BenchmarkReport = {
   p95_ms: number;
   created_at: string;
 };
+
+type AgentRegisterRequest = {
+  agent_name?: string;
+  framework?: string;
+  model?: string;
+  owner_org?: string;
+};
+
+type AgentTokenRequest = {
+  agent_id?: string;
+  agent_secret?: string;
+  proof_token?: string;
+};
+
+async function sha256HexOfString(input: string) {
+  const bytes = new TextEncoder().encode(input);
+  return sha256Hex(bytes);
+}
 
 app.onError((err, c) => {
   console.error("capagent_error", err);
@@ -48,6 +78,154 @@ app.use("*", async (c, next) => {
 });
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+app.post("/api/agents/register", async (c) => {
+  if (!allowPublicRegistration(c.env)) {
+    const adminKey = getAdminApiKey(c.env);
+    const header = c.req.header("x-capagent-admin-key") ?? "";
+    if (!adminKey || header !== adminKey) {
+      return c.json({ error: "admin_key_required" }, 401);
+    }
+  }
+
+  const body = (await c.req.json().catch(() => null)) as AgentRegisterRequest | null;
+  const name = body?.agent_name?.trim();
+  if (!name) return c.json({ error: "missing_agent_name" }, 400);
+
+  const now = new Date().toISOString();
+  const agentId = crypto.randomUUID();
+  const secretRaw = crypto.randomUUID().replace(/-/g, "");
+  const secretHash = await sha256HexOfString(`${agentId}:${secretRaw}`);
+
+  const agent: AgentRecord = {
+    agent_id: agentId,
+    agent_name: name,
+    framework: body?.framework?.trim() || undefined,
+    model: body?.model?.trim() || undefined,
+    owner_org: body?.owner_org?.trim() || undefined,
+    created_at: now,
+    capability_score: null,
+    safety_score: null,
+    last_verified: null,
+    revoked_at: null,
+    secret_hash: secretHash
+  };
+
+  await saveAgent(c.env, agent);
+
+  const identityTtl = getIdentityTtlSeconds(c.env);
+  const claims: AgentIdentityClaims = {
+    typ: "capagent_identity",
+    agent_id: agent.agent_id,
+    agent_name: agent.agent_name,
+    framework: agent.framework,
+    model: agent.model,
+    owner_org: agent.owner_org,
+    capability_score: agent.capability_score ?? undefined,
+    safety_score: agent.safety_score ?? undefined,
+    last_verified: agent.last_verified ?? null
+  };
+  const { jwt, exp } = await signIdentityJwt(c.env, claims, identityTtl);
+
+  return c.json({
+    agent_id: agentId,
+    agent_secret: secretRaw,
+    identity_token: jwt,
+    identity_expires_at: new Date(exp * 1000).toISOString()
+  });
+});
+
+app.post("/api/agents/token", async (c) => {
+  const body = (await c.req.json().catch(() => null)) as AgentTokenRequest | null;
+  if (!body?.agent_id || !body?.agent_secret) {
+    return c.json({ error: "missing_agent_credentials" }, 400);
+  }
+
+  const agent = (await getAgentById(c.env, body.agent_id)) ?? null;
+  if (!agent) return c.json({ error: "agent_not_found" }, 404);
+  if (agent.revoked_at) return c.json({ error: "agent_revoked" }, 403);
+
+  const expectedHash = agent.secret_hash;
+  const providedHash = await sha256HexOfString(`${agent.agent_id}:${body.agent_secret}`);
+  if (!constantTimeEqualHex(expectedHash, providedHash)) {
+    return c.json({ error: "invalid_agent_secret" }, 401);
+  }
+
+  let lastVerified = agent.last_verified ?? null;
+
+  if (body.proof_token) {
+    try {
+      const proof = await verifyProofJwt(c.env, body.proof_token);
+      if (typeof proof.challenge_id !== "string") {
+        throw new Error("invalid_proof_payload");
+      }
+      lastVerified = new Date().toISOString();
+      agent.last_verified = lastVerified;
+      await saveAgent(c.env, agent);
+    } catch {
+      return c.json({ error: "invalid_proof_token" }, 401);
+    }
+  }
+
+  const identityTtl = getIdentityTtlSeconds(c.env);
+  const claims: AgentIdentityClaims = {
+    typ: "capagent_identity",
+    agent_id: agent.agent_id,
+    agent_name: agent.agent_name,
+    framework: agent.framework,
+    model: agent.model,
+    owner_org: agent.owner_org,
+    capability_score: agent.capability_score ?? undefined,
+    safety_score: agent.safety_score ?? undefined,
+    last_verified: lastVerified
+  };
+  const { jwt, exp } = await signIdentityJwt(c.env, claims, identityTtl);
+
+  return c.json({ token: jwt, expires_at: new Date(exp * 1000).toISOString() });
+});
+
+app.post("/api/agents/refresh", async (c) => {
+  const auth = c.req.header("authorization") ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
+  if (!token) return c.json({ error: "missing_bearer_token" }, 401);
+
+  let claims: AgentIdentityClaims;
+  try {
+    claims = (await verifyIdentityJwt(c.env, token)) as AgentIdentityClaims;
+  } catch {
+    return c.json({ error: "invalid_identity_token" }, 401);
+  }
+
+  const agent = (await getAgentById(c.env, claims.agent_id)) ?? null;
+  if (!agent) return c.json({ error: "agent_not_found" }, 404);
+  if (agent.revoked_at) return c.json({ error: "agent_revoked" }, 403);
+
+  const identityTtl = getIdentityTtlSeconds(c.env);
+  const nextClaims: AgentIdentityClaims = {
+    typ: "capagent_identity",
+    agent_id: agent.agent_id,
+    agent_name: agent.agent_name,
+    framework: agent.framework,
+    model: agent.model,
+    owner_org: agent.owner_org,
+    capability_score: agent.capability_score ?? claims.capability_score,
+    safety_score: agent.safety_score ?? claims.safety_score,
+    last_verified: agent.last_verified ?? claims.last_verified ?? null
+  };
+  const { jwt, exp } = await signIdentityJwt(c.env, nextClaims, identityTtl);
+
+  return c.json({ token: jwt, expires_at: new Date(exp * 1000).toISOString() });
+});
+
+app.post("/api/agents/revoke", async (c) => {
+  const body = (await c.req.json().catch(() => null)) as { agent_id?: string } | null;
+  if (!body?.agent_id) return c.json({ error: "missing_agent_id" }, 400);
+
+  const updated = await revokeAgent(c.env, body.agent_id);
+  if (!updated) return c.json({ error: "agent_not_found" }, 404);
+
+  return c.json({ ok: true, revoked_at: updated.revoked_at });
+});
 
 app.post("/api/challenge", async (c) => {
   const body = (await c.req.json().catch(() => null)) as null | { agent_name?: string; agent_version?: string };
@@ -140,10 +318,15 @@ app.get("/api/protected/ping", async (c) => {
   const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
   if (!token) return c.json({ error: "missing_bearer_token" }, 401);
   try {
-    const payload = await verifyProofJwt(c.env, token);
-    return c.json({ ok: true, proof: payload });
+    const proof = await verifyProofJwt(c.env, token);
+    return c.json({ ok: true, type: "proof", claims: proof });
   } catch {
-    return c.json({ error: "invalid_token" }, 401);
+    try {
+      const identity = await verifyIdentityJwt(c.env, token);
+      return c.json({ ok: true, type: "identity", claims: identity });
+    } catch {
+      return c.json({ error: "invalid_token" }, 401);
+    }
   }
 });
 
@@ -191,6 +374,44 @@ app.get("/api/benchmarks", async (c) => {
   const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
   const reports = (await store.getJson<BenchmarkReport[]>("benchmarks:reports")) ?? [];
   return c.json({ reports });
+});
+
+app.post("/api/guestbook/sign", async (c) => {
+  const auth = c.req.header("authorization") ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
+  if (!token) return c.json({ error: "missing_bearer_token" }, 401);
+
+  let claims: AgentIdentityClaims;
+  try {
+    claims = (await verifyIdentityJwt(c.env, token)) as AgentIdentityClaims;
+  } catch {
+    return c.json({ error: "invalid_identity_token" }, 401);
+  }
+
+  const body = (await c.req.json().catch(() => null)) as { message?: string } | null;
+  const message = body?.message?.trim();
+  if (!message) return c.json({ error: "missing_message" }, 400);
+  if (message.length > 500) return c.json({ error: "message_too_long" }, 400);
+
+  const now = new Date().toISOString();
+  const entry: GuestbookEntry = {
+    id: crypto.randomUUID(),
+    agent_id: claims.agent_id,
+    agent_name: claims.agent_name,
+    framework: claims.framework,
+    model: claims.model,
+    owner_org: claims.owner_org,
+    message,
+    created_at: now
+  };
+
+  await addGuestbookEntry(c.env, entry);
+  return c.json({ ok: true, entry });
+});
+
+app.get("/api/guestbook", async (c) => {
+  const entries = await getGuestbookEntries(c.env);
+  return c.json({ entries });
 });
 
 export default app;

@@ -23,6 +23,32 @@ export type CapagentClientOptions = {
   agentVersion: string;
 };
 
+export type RegisterAgentRequest = {
+  agent_name: string;
+  framework?: string;
+  model?: string;
+  owner_org?: string;
+  adminKey?: string;
+};
+
+export type RegisterAgentResponse = {
+  agent_id: string;
+  agent_secret: string;
+  identity_token: string;
+  identity_expires_at: string;
+};
+
+export type IssueIdentityTokenRequest = {
+  agent_id: string;
+  agent_secret: string;
+  proof_token?: string;
+};
+
+export type IssueIdentityTokenResponse = {
+  token: string;
+  expires_at: string;
+};
+
 export function withCapagentProof(token: string, init?: RequestInit): RequestInit {
   const headers = new Headers(init?.headers);
   headers.set("authorization", `Bearer ${token}`);
@@ -74,6 +100,49 @@ export function createClient(opts: CapagentClientOptions) {
     async protectedPing(proofJwt: string) {
       const res = await fetch(`${baseUrl}/api/protected/ping`, withCapagentProof(proofJwt));
       if (!res.ok) throw new Error(`protected ping failed: ${res.status}`);
+      return await res.json();
+    },
+    async registerAgent(req: RegisterAgentRequest): Promise<RegisterAgentResponse> {
+      const headers: HeadersInit = { "content-type": "application/json" };
+      if (req.adminKey) {
+        (headers as any)["x-capagent-admin-key"] = req.adminKey;
+      }
+      const res = await fetch(`${baseUrl}/api/agents/register`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          agent_name: req.agent_name,
+          framework: req.framework,
+          model: req.model,
+          owner_org: req.owner_org
+        })
+      });
+      if (!res.ok) throw new Error(`agent register failed: ${res.status}`);
+      return (await res.json()) as RegisterAgentResponse;
+    },
+    async issueIdentityToken(req: IssueIdentityTokenRequest): Promise<IssueIdentityTokenResponse> {
+      const res = await fetch(`${baseUrl}/api/agents/token`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          agent_id: req.agent_id,
+          agent_secret: req.agent_secret,
+          proof_token: req.proof_token
+        })
+      });
+      if (!res.ok) throw new Error(`identity token failed: ${res.status}`);
+      return (await res.json()) as IssueIdentityTokenResponse;
+    },
+    async signGuestbook(identityToken: string, message: string) {
+      const res = await fetch(`${baseUrl}/api/guestbook/sign`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${identityToken}`
+        },
+        body: JSON.stringify({ message })
+      });
+      if (!res.ok) throw new Error(`guestbook sign failed: ${res.status}`);
       return await res.json();
     }
   };

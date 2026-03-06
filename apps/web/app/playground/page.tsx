@@ -115,6 +115,41 @@ export default function PlaygroundPage() {
       const exp = new Date(res.expires_at).getTime()
       const maxAge = Number.isFinite(exp) ? Math.max(0, Math.floor((exp - Date.now()) / 1000)) : 300
       document.cookie = `capagent_proof=${res.token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
+      setStatus("Verified! Signing guestbook and redirecting...")
+
+      // Try to register a temporary agent identity and sign the guestbook.
+      try {
+        const registerRes = await fetch(`${baseUrl}/api/agents/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agent_name: "capagent-web-playground",
+            framework: "web-playground",
+            model: "demo",
+            owner_org: "Capagent Playground",
+          }),
+        })
+
+        if (registerRes.ok) {
+          const regJson = (await registerRes.json()) as { identity_token?: string }
+          const identityToken = regJson.identity_token
+          if (identityToken) {
+            await fetch(`${baseUrl}/api/guestbook/sign`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                authorization: `Bearer ${identityToken}`,
+              },
+              body: JSON.stringify({
+                message: "Verified via Capagent web playground.",
+              }),
+            })
+          }
+        }
+      } catch {
+        // Ignore guestbook errors in the playground flow.
+      }
+
       setStatus("Verified! Redirecting to protected area...")
       setTimeout(() => router.push("/protected"), 1500)
     } catch (e: any) {

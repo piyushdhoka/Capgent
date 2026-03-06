@@ -62,6 +62,9 @@ export default function HomePage() {
             <Button asChild variant="outline" size="lg" className="h-12 px-6">
               <Link href="/docs">Read the Docs</Link>
             </Button>
+            <Button asChild variant="ghost" size="lg" className="h-12 px-6">
+              <Link href="/guestbook">View Guestbook</Link>
+            </Button>
           </motion.div>
 
           {/* Code block */}

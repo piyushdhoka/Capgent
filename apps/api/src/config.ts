@@ -4,9 +4,12 @@ export type Env = {
   CAPAGENT_JWT_SECRET: string;
   CAPAGENT_CHALLENGE_TTL_SECONDS?: string;
   CAPAGENT_PROOF_TTL_SECONDS?: string;
+  CAPAGENT_IDENTITY_TTL_SECONDS?: string;
   CAPAGENT_PUBLIC_BASE_URL?: string;
   CAPAGENT_CORS_ORIGINS?: string;
   CAPAGENT_FORCE_INMEMORY?: string;
+  CAPAGENT_ADMIN_API_KEY?: string;
+  CAPAGENT_ALLOW_PUBLIC_REGISTRATION?: string;
 };
 
 export function getChallengeTtlSeconds(env: Env) {
@@ -23,6 +26,13 @@ export function getProofTtlSeconds(env: Env) {
   return Math.floor(n);
 }
 
+export function getIdentityTtlSeconds(env: Env) {
+  const raw = env.CAPAGENT_IDENTITY_TTL_SECONDS ?? "86400";
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return 86400;
+  return Math.floor(n);
+}
+
 export function getCorsOrigins(env: Env): string[] {
   const raw = (env.CAPAGENT_CORS_ORIGINS ?? "").trim();
   if (!raw) return [];
@@ -35,4 +45,16 @@ export function getCorsOrigins(env: Env): string[] {
 export function forceInMemory(env: Env) {
   return (env.CAPAGENT_FORCE_INMEMORY ?? "").trim() === "1";
 }
+
+export function allowPublicRegistration(env: Env) {
+  const raw = (env.CAPAGENT_ALLOW_PUBLIC_REGISTRATION ?? "").trim();
+  // Default to true for local/dev unless explicitly disabled.
+  return raw === "" || raw === "1" || raw.toLowerCase() === "true";
+}
+
+export function getAdminApiKey(env: Env): string | null {
+  const raw = (env.CAPAGENT_ADMIN_API_KEY ?? "").trim();
+  return raw || null;
+}
+
 

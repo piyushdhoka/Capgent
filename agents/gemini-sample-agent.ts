@@ -7,15 +7,20 @@ async function main() {
 
   const client = createClient({
     baseUrl,
-    agentName: "grok-agent",
+    agentName: "gemini-agent",
     agentVersion: "0.0.1"
   });
 
   // 1) Fetch natural-language challenge
   const ch = await client.getChallenge();
 
-  // 2) Ask Grok (via OpenRouter) to parse instructions into canonical steps
-  const steps = await parseStepsWithOpenRouter(ch.instructions ?? []);
+  // 2) Ask Gemini (via OpenRouter) to parse instructions into canonical steps
+  const geminiModel =
+    process.env.OPENROUTER_GEMINI_MODEL ?? process.env.OPENROUTER_MODEL ?? "google/gemini-3.0-flash-latest";
+
+  const steps = await parseStepsWithOpenRouter(ch.instructions ?? [], {
+    model: geminiModel
+  });
 
   // 3) Compute answer + hmac from bytes + parsed steps
   const { answer, hmac } = await solveChallengeFromSteps({
@@ -32,7 +37,7 @@ async function main() {
     headers: { authorization: `Bearer ${vr.token}` }
   }).then((r) => r.json());
 
-  // 6) Automatically register an agent identity for this run and sign the guestbook
+  // 6) Register an identity for this Gemini agent and sign the guestbook
   let identity: any = null;
   let guestbook: any = null;
 
@@ -41,10 +46,10 @@ async function main() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        agent_name: "grok-agent",
+        agent_name: "gemini-agent",
         framework: "node-agent",
-        model: process.env.OPENROUTER_MODEL ?? "x-ai/grok-4-fast",
-        owner_org: "Grok Sample Agent"
+        model: geminiModel,
+        owner_org: "Gemini Sample Agent"
       })
     });
 
@@ -69,7 +74,7 @@ async function main() {
           authorization: `Bearer ${reg.identity_token}`
         },
         body: JSON.stringify({
-          message: "Verified via grok-sample-agent."
+          message: "Verified via gemini-sample-agent."
         })
       });
 
@@ -85,6 +90,7 @@ async function main() {
     JSON.stringify(
       {
         verified: true,
+        model: geminiModel,
         challenge_id: ch.challenge_id,
         proof_expires_at: vr.expires_at,
         protected_ping: pingRes,
