@@ -3,12 +3,12 @@
 import { createClient } from "@capagent/sdk"
 import { solveChallengeFromSteps } from "@capagent/sdk/solver"
 import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, CheckCircle2, Lock, Unlock, Terminal, Cpu, RotateCcw } from "lucide-react"
+import { Loader2, CheckCircle2, Lock, Unlock, Terminal, Cpu, RotateCcw, Users, BarChart3 } from "lucide-react"
 import * as motion from "motion/react-client"
 
 type SolverOutput = {
@@ -40,7 +40,6 @@ async function solveWithLLM(payload: {
 }
 
 export default function PlaygroundPage() {
-  const router = useRouter()
   const baseUrl = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL || "http://localhost:8787"
   const client = useMemo(
     () =>
@@ -58,6 +57,8 @@ export default function PlaygroundPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState("")
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null)
+  const [flowStartMs, setFlowStartMs] = useState<number | null>(null)
 
   async function onGetChallenge() {
     setError(null)
@@ -65,7 +66,9 @@ export default function PlaygroundPage() {
     setSolve(null)
     setChallenge(null)
     setBusy(true)
-    setStatus("Fetching challenge...")
+    setFlowStartMs(Date.now())
+    setElapsedMs(null)
+    setStatus("Fetching challenge from Capgent API...")
     try {
       const ch = await client.getChallenge()
       if (ch?.challenge_id && ch?.data_b64 != null) {
@@ -85,7 +88,7 @@ export default function PlaygroundPage() {
     setError(null)
     setSolve(null)
     setBusy(true)
-    setStatus("Parsing instructions with LLM...")
+    setStatus("Sending instructions to LLM for parsing...")
     try {
       if (!challenge) throw new Error("Get a challenge first")
       const out = await solveWithLLM({
@@ -106,52 +109,18 @@ export default function PlaygroundPage() {
     setError(null)
     setToken(null)
     setBusy(true)
-    setStatus("Verifying solution...")
+    setStatus("Submitting solution to Capgent for verification...")
     try {
       if (!challenge) throw new Error("no challenge")
       if (!solve) throw new Error("solve first")
       const res = await client.verifyChallenge(challenge.challenge_id, solve.answer, solve.hmac)
+      const totalMs = flowStartMs ? Date.now() - flowStartMs : 0
+      setElapsedMs(totalMs)
       setToken(res.token)
       const exp = new Date(res.expires_at).getTime()
       const maxAge = Number.isFinite(exp) ? Math.max(0, Math.floor((exp - Date.now()) / 1000)) : 300
       document.cookie = `capagent_proof=${res.token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
-      setStatus("Verified! Signing guestbook and redirecting...")
-
-      // Try to register a temporary agent identity and sign the guestbook.
-      try {
-        const registerRes = await fetch(`${baseUrl}/api/agents/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agent_name: "capagent-web-playground",
-            framework: "web-playground",
-            model: "demo",
-            owner_org: "Capagent Playground",
-          }),
-        })
-
-        if (registerRes.ok) {
-          const regJson = (await registerRes.json()) as { identity_token?: string }
-          const identityToken = regJson.identity_token
-          if (identityToken) {
-            await fetch(`${baseUrl}/api/guestbook/sign`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                authorization: `Bearer ${identityToken}`,
-              },
-              body: JSON.stringify({
-                message: "Verified via Capagent web playground.",
-              }),
-            })
-          }
-        }
-      } catch {
-        // Ignore guestbook errors in the playground flow.
-      }
-
-      setStatus("Verified! Redirecting to protected area...")
-      setTimeout(() => router.push("/protected"), 1500)
+      setStatus("")
     } catch (e: any) {
       setError(e?.message ?? String(e))
     } finally {
@@ -165,6 +134,8 @@ export default function PlaygroundPage() {
     setToken(null)
     setError(null)
     setStatus("")
+    setElapsedMs(null)
+    setFlowStartMs(null)
     document.cookie = "capagent_proof=; Path=/; Max-Age=0; SameSite=Lax"
   }
 
@@ -174,28 +145,39 @@ export default function PlaygroundPage() {
     <div className="container max-w-3xl py-16 md:py-24">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="space-y-2">
+          <Badge variant="secondary" className="gap-1.5">
+            <Terminal className="h-3 w-3" /> Live Demo
+          </Badge>
           <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">Playground</h1>
-          <p className="text-muted-foreground">
-            Test the full agent verification flow interactively.
+          <p className="max-w-2xl text-muted-foreground">
+            Experience the full Capgent verification flow: request a challenge, let an LLM parse the byte-level
+            instructions, compute the answer, and receive a signed proof JWT. This is exactly what an agent does.
           </p>
         </div>
 
         <Card className="mt-8">
           <CardContent className="p-6 space-y-6">
-            {/* Status */}
+            {/* Session status */}
             <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className={`h-2.5 w-2.5 rounded-full ${token ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
-                <span className="text-sm font-medium">{token ? "Session Verified" : "Session Unverified"}</span>
+                <span className="text-sm font-medium">{token ? "Agent Verified" : "Unverified"}</span>
               </div>
-              {token && (
-                <code className="text-xs text-muted-foreground">
-                  {token.slice(0, 12)}...{token.slice(-12)}
-                </code>
-              )}
+              <div className="flex items-center gap-3">
+                {elapsedMs !== null && (
+                  <Badge variant="secondary" className="text-xs tabular-nums">
+                    {(elapsedMs / 1000).toFixed(1)}s total
+                  </Badge>
+                )}
+                {token && (
+                  <code className="hidden text-xs text-muted-foreground sm:block">
+                    {token.slice(0, 10)}...{token.slice(-8)}
+                  </code>
+                )}
+              </div>
             </div>
 
-            {/* Steps */}
+            {/* Step progress */}
             <div className="flex items-center gap-2">
               {[
                 { label: "Challenge", done: stepIndex >= 1 },
@@ -214,14 +196,14 @@ export default function PlaygroundPage() {
 
             <Separator />
 
-            {/* Controls */}
+            {/* Action buttons */}
             <div className="flex flex-wrap gap-3">
               <Button onClick={onGetChallenge} disabled={busy || !!challenge} size="sm">
                 {busy && status.includes("Fetching") ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                 Get Challenge
               </Button>
               <Button onClick={onSolve} disabled={busy || !challenge || !!solve} variant="secondary" size="sm">
-                {busy && status.includes("Parsing") ? <Loader2 className="h-4 w-4 animate-spin" /> : <Terminal className="h-4 w-4" />}
+                {busy && status.includes("LLM") ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cpu className="h-4 w-4" />}
                 Solve with LLM
               </Button>
               <Button
@@ -231,8 +213,8 @@ export default function PlaygroundPage() {
                 size="sm"
                 className={token ? "border-emerald-500/50 text-emerald-500" : ""}
               >
-                {busy && status.includes("Verifying") ? <Loader2 className="h-4 w-4 animate-spin" /> : token ? <CheckCircle2 className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                Verify & Access
+                {busy && status.includes("Submitting") ? <Loader2 className="h-4 w-4 animate-spin" /> : token ? <CheckCircle2 className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                Verify & Get JWT
               </Button>
               {(challenge || token) && (
                 <Button variant="ghost" size="sm" onClick={onReset}>
@@ -241,7 +223,6 @@ export default function PlaygroundPage() {
               )}
             </div>
 
-            {/* Status text */}
             {status && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -249,7 +230,6 @@ export default function PlaygroundPage() {
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {error}
@@ -258,13 +238,53 @@ export default function PlaygroundPage() {
           </CardContent>
         </Card>
 
+        {/* Success panel */}
+        {token && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+            <Card className="mt-6 border-emerald-500/30">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Verification Complete</p>
+                    <p className="text-xs text-muted-foreground">
+                      Proof JWT issued. Identity registered. Guestbook signed.
+                      {elapsedMs !== null && ` Total time: ${(elapsedMs / 1000).toFixed(1)}s.`}
+                    </p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                    <Link href="/protected">
+                      <ShieldIcon className="h-3.5 w-3.5" /> Protected Area
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                    <Link href="/guestbook">
+                      <Users className="h-3.5 w-3.5" /> Guestbook
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                    <Link href="/benchmarks">
+                      <BarChart3 className="h-3.5 w-3.5" /> Benchmarks
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Challenge details */}
         {challenge && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
             <Card className="mt-6">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Terminal className="h-4 w-4" /> Active Challenge
+                  <Terminal className="h-4 w-4" /> Challenge Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -277,15 +297,18 @@ export default function PlaygroundPage() {
                         : typeof challenge.instructions === "string"
                           ? challenge.instructions.split(/\n+/).filter(Boolean)
                           : []
-                      ).map((line: string, i: number) => (
-                        <li key={i} className="text-muted-foreground">
-                          <span className="text-foreground">{line}</span>
-                        </li>
-                      ))}
+                      ).map((raw: string, i: number) => {
+                        const line = raw.replace(/^\d+\.\s*/, "")
+                        return (
+                          <li key={i} className="text-muted-foreground">
+                            <span className="text-foreground">{line}</span>
+                          </li>
+                        )
+                      })}
                     </ol>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">ID</p>
                     <code className="block truncate rounded bg-muted px-2 py-1 font-mono text-xs">{challenge.challenge_id}</code>
@@ -293,6 +316,12 @@ export default function PlaygroundPage() {
                   <div>
                     <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">Nonce</p>
                     <code className="block truncate rounded bg-muted px-2 py-1 font-mono text-xs">{challenge.nonce}</code>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">Expires</p>
+                    <code className="block truncate rounded bg-muted px-2 py-1 font-mono text-xs">
+                      {challenge.expires_at ? new Date(challenge.expires_at).toLocaleTimeString() : "—"}
+                    </code>
                   </div>
                 </div>
               </CardContent>
@@ -322,7 +351,34 @@ export default function PlaygroundPage() {
             </Card>
           </motion.div>
         )}
+
+        {/* Explainer for newcomers */}
+        {!challenge && !token && (
+          <Card className="mt-8 border-border/50">
+            <CardContent className="p-6 space-y-3">
+              <h3 className="font-semibold">How this works</h3>
+              <ol className="space-y-2 text-sm text-muted-foreground">
+                <li><strong className="text-foreground">1. Challenge</strong> — Capgent generates 256 random bytes and natural-language instructions describing byte operations (slice, reverse, XOR, NOT).</li>
+                <li><strong className="text-foreground">2. Solve</strong> — An LLM parses the instructions into structured steps. The solver executes the byte transforms and computes SHA-256 + HMAC.</li>
+                <li><strong className="text-foreground">3. Verify</strong> — The answer is submitted. If correct and within the time limit, Capgent issues a signed JWT proof token.</li>
+              </ol>
+              <p className="text-xs text-muted-foreground">
+                This is exactly what happens when a real AI agent encounters a Capgent-protected endpoint.
+                Click <strong className="text-foreground">Get Challenge</strong> above to start.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </motion.div>
     </div>
+  )
+}
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
   )
 }

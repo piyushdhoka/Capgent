@@ -5,8 +5,12 @@ import {
   allowPublicRegistration,
   forceInMemory,
   getAdminApiKey,
+  getBenchmarkReportRateLimitPerMinute,
+  getChallengeRateLimitPerMinute,
   getChallengeTtlSeconds,
   getCorsOrigins,
+  getGuestbookCooldownSeconds,
+  getGuestbookSignRateLimitPerMinute,
   getIdentityTtlSeconds,
   getProofTtlSeconds
 } from "./config";
@@ -14,12 +18,12 @@ import { generateChallenge } from "./challenge/generate";
 import type { StoredChallenge } from "./challenge/types";
 import { applySteps, hmacSha256Hex, sha256Hex } from "./challenge/eval";
 import { canUseRedis, createRedis } from "./storage/redis";
-import { createInMemoryStore, createRedisStore } from "./storage/store";
+import { createInMemoryStore, createRedisStore, type Store } from "./storage/store";
 import { AgentIdentityClaims, signIdentityJwt, signProofJwt, verifyIdentityJwt, verifyProofJwt } from "./auth/jwt";
 import type { AgentRecord } from "./identity/store";
 import { getAgentById, revokeAgent, saveAgent } from "./identity/store";
 import type { GuestbookEntry } from "./guestbook/store";
-import { addGuestbookEntry, getGuestbookEntries } from "./guestbook/store";
+import { addGuestbookEntry, getGuestbookEntries, clearGuestbook } from "./guestbook/store";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -31,6 +35,7 @@ type BenchmarkReport = {
   agent_version: string;
   runs: number;
   successes: number;
+  success_runs: number;
   avg_ms: number;
   p95_ms: number;
   created_at: string;
@@ -52,6 +57,77 @@ type AgentTokenRequest = {
 async function sha256HexOfString(input: string) {
   const bytes = new TextEncoder().encode(input);
   return sha256Hex(bytes);
+}
+
+function getStore(env: Env): Store {
+  return !forceInMemory(env) && canUseRedis(env) ? createRedisStore(createRedis(env)) : createInMemoryStore();
+}
+
+function getClientKey(c: { req: { header(name: string): string | undefined } }): string {
+  const cf = (c.req.header("cf-connecting-ip") ?? "").trim();
+  if (cf) return cf;
+  const xff = (c.req.header("x-forwarded-for") ?? "").split(",")[0]?.trim();
+  if (xff) return xff;
+  return "unknown-client";
+}
+
+type RateLimitResult = {
+  allowed: boolean;
+  retryAfterSeconds: number;
+};
+
+async function checkRateLimit(
+  env: Env,
+  key: string,
+  limit: number,
+  windowSeconds: number
+): Promise<RateLimitResult> {
+  const store = getStore(env);
+  const now = Date.now();
+  const current = (await store.getJson<{ count: number; reset_at_ms: number }>(key)) ?? null;
+
+  if (!current || now >= current.reset_at_ms) {
+    const resetAt = now + windowSeconds * 1000;
+    await store.setJson(key, { count: 1, reset_at_ms: resetAt }, windowSeconds);
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  if (current.count >= limit) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((current.reset_at_ms - now) / 1000));
+    return { allowed: false, retryAfterSeconds };
+  }
+
+  const nextCount = current.count + 1;
+  const ttl = Math.max(1, Math.ceil((current.reset_at_ms - now) / 1000));
+  await store.setJson(key, { count: nextCount, reset_at_ms: current.reset_at_ms }, ttl);
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+function normalizeMessage(msg: string): string {
+  return msg.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function getSpamMessageError(message: string): string | null {
+  if (message.length > 500) return "message_too_long";
+  const words = message.trim().split(/\s+/).filter(Boolean);
+  if (words.length > 80) return "message_too_many_words";
+
+  const normalized = normalizeMessage(message);
+  const bannedPatterns = [
+    "http://",
+    "https://",
+    "buy now",
+    "free money",
+    "telegram",
+    "discord.gg",
+    "casino",
+    "airdrop",
+    "viagra"
+  ];
+  if (bannedPatterns.some((x) => normalized.includes(x))) return "message_blocked_content";
+  if (/([a-z0-9])\1{8,}/i.test(message)) return "message_repetitive_content";
+
+  return null;
 }
 
 app.onError((err, c) => {
@@ -228,6 +304,17 @@ app.post("/api/agents/revoke", async (c) => {
 });
 
 app.post("/api/challenge", async (c) => {
+  const challengeLimit = getChallengeRateLimitPerMinute(c.env);
+  const clientKey = getClientKey(c);
+  const rate = await checkRateLimit(c.env, `ratelimit:challenge:${clientKey}`, challengeLimit, 60);
+  if (!rate.allowed) {
+    return c.json(
+      { error: "rate_limited", endpoint: "/api/challenge", retry_after_seconds: rate.retryAfterSeconds },
+      429,
+      { "Retry-After": String(rate.retryAfterSeconds) }
+    );
+  }
+
   const body = (await c.req.json().catch(() => null)) as null | { agent_name?: string; agent_version?: string };
   const agentName = body?.agent_name?.trim() || "unknown-agent";
   const agentVersion = body?.agent_version?.trim() || "0";
@@ -250,7 +337,7 @@ app.post("/api/challenge", async (c) => {
     agent_version: agentVersion
   };
 
-  const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
+  const store = getStore(c.env);
   await store.setJson(`challenge:${challengeId}`, stored, ttl);
 
   const includeSteps = c.req.query("debug_steps") === "1";
@@ -278,6 +365,14 @@ app.post("/api/verify/:challengeId", async (c) => {
   const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
   const stored = (await store.getJson<StoredChallenge>(`challenge:${challengeId}`)) ?? null;
   if (!stored) return c.json({ error: "challenge_not_found_or_expired" }, 404);
+  if (stored.expires_at) {
+    const nowMs = Date.now();
+    const expMs = Number.isFinite(Date.parse(stored.expires_at)) ? Date.parse(stored.expires_at) : 0;
+    if (!expMs || nowMs > expMs) {
+      await store.del(`challenge:${challengeId}`).catch(() => {});
+      return c.json({ error: "challenge_expired" }, 410);
+    }
+  }
   if (!stored.nonce || stored.nonce.length < 2) return c.json({ error: "stored_nonce_missing" }, 500);
 
   const body = (await c.req.json().catch(() => null)) as null | {
@@ -314,9 +409,29 @@ app.post("/api/verify/:challengeId", async (c) => {
 });
 
 app.get("/api/protected/ping", async (c) => {
+  const base = (c.env.CAPAGENT_PUBLIC_BASE_URL ?? "").replace(/\/+$/, "") || "http://localhost:8787";
   const auth = c.req.header("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
-  if (!token) return c.json({ error: "missing_bearer_token" }, 401);
+
+  function unauthorized(detail: string) {
+    return c.json(
+      {
+        error: detail,
+        capagent: {
+          challenge_endpoint: `${base}/api/challenge`,
+          verify_endpoint: `${base}/api/verify/{challenge_id}`,
+          well_known: `${base}/.well-known/capagent.json`
+        }
+      },
+      401,
+      {
+        "WWW-Authenticate": `Bearer realm="capagent", challenge_endpoint="${base}/api/challenge"`
+      }
+    );
+  }
+
+  if (!token) return unauthorized("missing_bearer_token");
+
   try {
     const proof = await verifyProofJwt(c.env, token);
     return c.json({ ok: true, type: "proof", claims: proof });
@@ -325,12 +440,23 @@ app.get("/api/protected/ping", async (c) => {
       const identity = await verifyIdentityJwt(c.env, token);
       return c.json({ ok: true, type: "identity", claims: identity });
     } catch {
-      return c.json({ error: "invalid_token" }, 401);
+      return unauthorized("invalid_token");
     }
   }
 });
 
 app.post("/api/benchmarks/report", async (c) => {
+  const benchmarkLimit = getBenchmarkReportRateLimitPerMinute(c.env);
+  const clientKey = getClientKey(c);
+  const rate = await checkRateLimit(c.env, `ratelimit:benchmark:${clientKey}`, benchmarkLimit, 60);
+  if (!rate.allowed) {
+    return c.json(
+      { error: "rate_limited", endpoint: "/api/benchmarks/report", retry_after_seconds: rate.retryAfterSeconds },
+      429,
+      { "Retry-After": String(rate.retryAfterSeconds) }
+    );
+  }
+
   const body = (await c.req.json().catch(() => null)) as null | {
     model_id?: string;
     framework?: string;
@@ -347,25 +473,64 @@ app.post("/api/benchmarks/report", async (c) => {
   }
 
   const now = new Date().toISOString();
-  const report: BenchmarkReport = {
-    id: crypto.randomUUID(),
-    model_id: String(body.model_id),
-    framework: String(body.framework),
-    agent_name: (body.agent_name ?? "unknown-agent").trim() || "unknown-agent",
-    agent_version: (body.agent_version ?? "0.0.0").trim() || "0.0.0",
-    runs: Number(body.runs),
-    successes: Number(body.successes ?? 0),
-    avg_ms: Number(body.avg_ms ?? 0),
-    p95_ms: Number(body.p95_ms ?? 0),
-    created_at: now
-  };
+  const incomingRuns = Number(body.runs);
+  const incomingSuccesses = Number(body.successes ?? 0);
+  const incomingAvgRaw = Number(body.avg_ms ?? 0);
+  const incomingP95Raw = Number(body.p95_ms ?? 0);
+  const incomingAvg = Number.isFinite(incomingAvgRaw) ? Math.max(0, Math.min(incomingAvgRaw, 60_000)) : 0;
+  const incomingP95 = Number.isFinite(incomingP95Raw) ? Math.max(0, Math.min(incomingP95Raw, 60_000)) : 0;
 
-  const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
+  const store = getStore(c.env);
   const key = "benchmarks:reports";
   const existing = (await store.getJson<BenchmarkReport[]>(key)) ?? [];
+
+  const modelKey = String(body.model_id).toLowerCase().trim();
+  const existingIdx = existing.findIndex((r) => r.model_id.toLowerCase().trim() === modelKey);
+
+  let report: BenchmarkReport;
+
+  if (existingIdx >= 0) {
+    const prev = existing[existingIdx]!;
+    const totalRuns = prev.runs + incomingRuns;
+    const totalSuccesses = prev.successes + incomingSuccesses;
+    const prevSuccessRuns = Math.max(0, Number((prev as any).success_runs ?? prev.successes ?? 0));
+    const nextSuccessRuns = prevSuccessRuns + incomingSuccesses;
+    const weightedAvg =
+      nextSuccessRuns > 0
+        ? (prev.avg_ms * prevSuccessRuns + incomingAvg * incomingSuccesses) / nextSuccessRuns
+        : 0;
+    const weightedP95 = incomingSuccesses > 0 ? Math.max(prev.p95_ms, incomingP95) : prev.p95_ms;
+    report = {
+      ...prev,
+      framework: body.framework ? String(body.framework) : prev.framework,
+      agent_name: (body.agent_name ?? prev.agent_name).trim() || prev.agent_name,
+      agent_version: (body.agent_version ?? prev.agent_version).trim() || prev.agent_version,
+      runs: totalRuns,
+      successes: totalSuccesses,
+      success_runs: nextSuccessRuns,
+      avg_ms: Math.round(weightedAvg * 100) / 100,
+      p95_ms: Math.round(weightedP95 * 100) / 100,
+      created_at: now
+    };
+    existing.splice(existingIdx, 1);
+  } else {
+    report = {
+      id: crypto.randomUUID(),
+      model_id: String(body.model_id),
+      framework: String(body.framework),
+      agent_name: (body.agent_name ?? "unknown-agent").trim() || "unknown-agent",
+      agent_version: (body.agent_version ?? "0.0.0").trim() || "0.0.0",
+      runs: incomingRuns,
+      successes: incomingSuccesses,
+      success_runs: incomingSuccesses,
+      avg_ms: incomingSuccesses > 0 ? Math.round(incomingAvg * 100) / 100 : 0,
+      p95_ms: incomingSuccesses > 0 ? Math.round(incomingP95 * 100) / 100 : 0,
+      created_at: now
+    };
+  }
+
   const next = [report, ...existing].slice(0, 100);
-  // keep for 30 days
-  await store.setJson(key, next, 60 * 60 * 24 * 30);
+  await store.setJson(key, next, 60 * 60 * 24 * 365);
 
   return c.json({ ok: true, report });
 });
@@ -376,7 +541,29 @@ app.get("/api/benchmarks", async (c) => {
   return c.json({ reports });
 });
 
+app.delete("/api/benchmarks", async (c) => {
+  const adminKey = getAdminApiKey(c.env);
+  const header = c.req.header("x-capagent-admin-key") ?? "";
+  if (adminKey && header !== adminKey) {
+    return c.json({ error: "admin_key_required" }, 401);
+  }
+  const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
+  await store.del("benchmarks:reports");
+  return c.json({ ok: true, cleared: true });
+});
+
 app.post("/api/guestbook/sign", async (c) => {
+  const guestbookLimit = getGuestbookSignRateLimitPerMinute(c.env);
+  const clientKey = getClientKey(c);
+  const ipRate = await checkRateLimit(c.env, `ratelimit:guestbook:ip:${clientKey}`, guestbookLimit, 60);
+  if (!ipRate.allowed) {
+    return c.json(
+      { error: "rate_limited", endpoint: "/api/guestbook/sign", retry_after_seconds: ipRate.retryAfterSeconds },
+      429,
+      { "Retry-After": String(ipRate.retryAfterSeconds) }
+    );
+  }
+
   const auth = c.req.header("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
   if (!token) return c.json({ error: "missing_bearer_token" }, 401);
@@ -388,10 +575,37 @@ app.post("/api/guestbook/sign", async (c) => {
     return c.json({ error: "invalid_identity_token" }, 401);
   }
 
-  const body = (await c.req.json().catch(() => null)) as { message?: string } | null;
+  const agentRate = await checkRateLimit(c.env, `ratelimit:guestbook:agent:${claims.agent_id}`, 10, 60);
+  if (!agentRate.allowed) {
+    return c.json(
+      { error: "rate_limited", endpoint: "/api/guestbook/sign", retry_after_seconds: agentRate.retryAfterSeconds },
+      429,
+      { "Retry-After": String(agentRate.retryAfterSeconds) }
+    );
+  }
+
+  const body = (await c.req.json().catch(() => null)) as { message?: string; solve_ms?: number } | null;
   const message = body?.message?.trim();
   if (!message) return c.json({ error: "missing_message" }, 400);
-  if (message.length > 500) return c.json({ error: "message_too_long" }, 400);
+  const spamError = getSpamMessageError(message);
+  if (spamError) return c.json({ error: spamError }, 400);
+
+  const cooldownSeconds = getGuestbookCooldownSeconds(c.env);
+  let cooldownKey = "";
+  if (cooldownSeconds > 0) {
+    const store = getStore(c.env);
+    cooldownKey = `guestbook:cooldown:${claims.agent_id}`;
+    const cooldown = (await store.getJson<{ last_signed_at_ms: number }>(cooldownKey)) ?? null;
+    const nowMs = Date.now();
+    if (cooldown && nowMs - cooldown.last_signed_at_ms < cooldownSeconds * 1000) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((cooldownSeconds * 1000 - (nowMs - cooldown.last_signed_at_ms)) / 1000));
+      return c.json(
+        { error: "guestbook_cooldown_active", retry_after_seconds: retryAfterSeconds },
+        429,
+        { "Retry-After": String(retryAfterSeconds) }
+      );
+    }
+  }
 
   const now = new Date().toISOString();
   const entry: GuestbookEntry = {
@@ -402,16 +616,46 @@ app.post("/api/guestbook/sign", async (c) => {
     model: claims.model,
     owner_org: claims.owner_org,
     message,
-    created_at: now
+    solve_ms: typeof body?.solve_ms === "number" && body.solve_ms >= 0 ? Math.round(body.solve_ms) : 0,
+    created_at: now,
   };
 
-  await addGuestbookEntry(c.env, entry);
-  return c.json({ ok: true, entry });
+  const saved = await addGuestbookEntry(c.env, entry);
+  if (cooldownSeconds > 0 && cooldownKey) {
+    await getStore(c.env).setJson(cooldownKey, { last_signed_at_ms: Date.now() }, cooldownSeconds);
+  }
+  return c.json({ ok: true, entry: saved });
 });
 
 app.get("/api/guestbook", async (c) => {
   const entries = await getGuestbookEntries(c.env);
   return c.json({ entries });
+});
+
+app.delete("/api/guestbook", async (c) => {
+  const adminKey = getAdminApiKey(c.env);
+  const header = c.req.header("x-capagent-admin-key") ?? "";
+  if (adminKey && header !== adminKey) {
+    return c.json({ error: "admin_key_required" }, 401);
+  }
+  await clearGuestbook(c.env);
+  return c.json({ ok: true, cleared: true });
+});
+
+app.get("/.well-known/capagent.json", async (c) => {
+  const base = (c.env.CAPAGENT_PUBLIC_BASE_URL ?? "").replace(/\/+$/, "") || "http://localhost:8787";
+  return c.json({
+    issuer: base,
+    challenge_endpoint: `${base}/api/challenge`,
+    verify_endpoint: `${base}/api/verify/{challenge_id}`,
+    protected_ping_endpoint: `${base}/api/protected/ping`,
+    agents_register_endpoint: `${base}/api/agents/register`,
+    guestbook_endpoint: `${base}/api/guestbook`,
+    guestbook_sign_endpoint: `${base}/api/guestbook/sign`,
+    benchmarks_endpoint: `${base}/api/benchmarks`,
+    docs_url: `${base}/docs`,
+    protocol_version: "0.1.0"
+  });
 });
 
 export default app;

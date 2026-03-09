@@ -10,7 +10,17 @@ export type Env = {
   CAPAGENT_FORCE_INMEMORY?: string;
   CAPAGENT_ADMIN_API_KEY?: string;
   CAPAGENT_ALLOW_PUBLIC_REGISTRATION?: string;
+  CAPAGENT_RATE_LIMIT_CHALLENGE_PER_MINUTE?: string;
+  CAPAGENT_RATE_LIMIT_GUESTBOOK_SIGN_PER_MINUTE?: string;
+  CAPAGENT_RATE_LIMIT_BENCHMARK_REPORT_PER_MINUTE?: string;
+  CAPAGENT_GUESTBOOK_COOLDOWN_SECONDS?: string;
 };
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const n = Number(raw ?? "");
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.floor(n);
+}
 
 export function getChallengeTtlSeconds(env: Env) {
   const raw = env.CAPAGENT_CHALLENGE_TTL_SECONDS ?? "30";
@@ -55,6 +65,22 @@ export function allowPublicRegistration(env: Env) {
 export function getAdminApiKey(env: Env): string | null {
   const raw = (env.CAPAGENT_ADMIN_API_KEY ?? "").trim();
   return raw || null;
+}
+
+export function getChallengeRateLimitPerMinute(env: Env): number {
+  return parsePositiveInt(env.CAPAGENT_RATE_LIMIT_CHALLENGE_PER_MINUTE, 120);
+}
+
+export function getGuestbookSignRateLimitPerMinute(env: Env): number {
+  return parsePositiveInt(env.CAPAGENT_RATE_LIMIT_GUESTBOOK_SIGN_PER_MINUTE, 30);
+}
+
+export function getBenchmarkReportRateLimitPerMinute(env: Env): number {
+  return parsePositiveInt(env.CAPAGENT_RATE_LIMIT_BENCHMARK_REPORT_PER_MINUTE, 60);
+}
+
+export function getGuestbookCooldownSeconds(env: Env): number {
+  return parsePositiveInt(env.CAPAGENT_GUESTBOOK_COOLDOWN_SECONDS, 20);
 }
 
 

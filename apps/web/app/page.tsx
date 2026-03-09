@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Cpu, ShieldCheck, Terminal, Zap, Lock, BarChart3, Check } from "lucide-react"
+import { ArrowRight, Cpu, ShieldCheck, Terminal, Zap, Lock, BarChart3, BookOpen, Users, Code2, Globe } from "lucide-react"
 import * as motion from "motion/react-client"
 
 const fadeUp = {
@@ -31,7 +31,7 @@ export default function HomePage() {
           <motion.div variants={fadeUp} className="flex justify-center">
             <Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Now in Public Beta
+              Open Source &middot; Public Beta
             </Badge>
           </motion.div>
 
@@ -39,9 +39,9 @@ export default function HomePage() {
             variants={fadeUp}
             className="mx-auto max-w-4xl text-center font-serif text-4xl font-medium tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
           >
-            The identity layer for{" "}
+            Verify that{" "}
             <span className="bg-gradient-to-r from-neutral-200 via-neutral-400 to-neutral-200 bg-clip-text text-transparent">
-              autonomous agents
+              you are not human
             </span>
           </motion.h1>
 
@@ -49,8 +49,8 @@ export default function HomePage() {
             variants={fadeUp}
             className="mx-auto mt-6 max-w-2xl text-center text-lg text-muted-foreground"
           >
-            Verify agent capabilities with byte-level challenges. Issue cryptographic proof tokens.
-            Gate your APIs for verified agents only.
+            Human CAPTCHAs keep bots out. Capgent does the opposite&mdash;it keeps humans out and lets
+            verified AI agents through using byte-level challenges and cryptographic proof tokens.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -62,9 +62,6 @@ export default function HomePage() {
             <Button asChild variant="outline" size="lg" className="h-12 px-6">
               <Link href="/docs">Read the Docs</Link>
             </Button>
-            <Button asChild variant="ghost" size="lg" className="h-12 px-6">
-              <Link href="/guestbook">View Guestbook</Link>
-            </Button>
           </motion.div>
 
           {/* Code block */}
@@ -74,14 +71,11 @@ export default function HomePage() {
                 <div className="h-3 w-3 rounded-full bg-red-500/80" />
                 <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
                 <div className="h-3 w-3 rounded-full bg-green-500/80" />
-                <span className="ml-3 text-xs text-muted-foreground">terminal</span>
+                <span className="ml-3 text-xs text-muted-foreground">agent.ts</span>
               </div>
               <CardContent className="p-0">
                 <pre className="overflow-x-auto p-5 font-mono text-sm leading-relaxed">
                   <code>
-                    <span className="text-muted-foreground">$ </span>
-                    <span className="text-emerald-400">npm install</span>
-                    {" @capagent/sdk\n\n"}
                     <span className="text-purple-400">import</span>
                     {" { createClient } "}
                     <span className="text-purple-400">from</span>
@@ -93,93 +87,37 @@ export default function HomePage() {
                     <span className="text-blue-400">createClient</span>
                     {"({ agentName: "}
                     <span className="text-emerald-400">{'"my-agent"'}</span>
-                    {" })\n"}
+                    {" })\n\n"}
+                    <span className="text-muted-foreground">{"// 1. Get a byte-level challenge"}</span>
+                    {"\n"}
                     <span className="text-purple-400">const</span>
                     {" ch = "}
                     <span className="text-purple-400">await</span>
                     {" client."}
                     <span className="text-blue-400">getChallenge</span>
-                    {"()\n"}
-                    <span className="text-muted-foreground">{"// → parse instructions with LLM → solve → verify → proof JWT"}</span>
+                    {"()\n\n"}
+                    <span className="text-muted-foreground">{"// 2. Parse NL instructions → compute answer → verify"}</span>
+                    {"\n"}
+                    <span className="text-purple-400">const</span>
+                    {" proof = "}
+                    <span className="text-purple-400">await</span>
+                    {" client."}
+                    <span className="text-blue-400">verifyChallenge</span>
+                    {"(ch.challenge_id, answer, hmac)\n\n"}
+                    <span className="text-muted-foreground">{"// 3. Use the JWT to access any protected endpoint"}</span>
+                    {"\n"}
+                    <span className="text-purple-400">await</span>
+                    {" "}
+                    <span className="text-blue-400">fetch</span>
+                    {"(protectedUrl, {\n  headers: { authorization: "}
+                    <span className="text-emerald-400">{"`Bearer ${proof.token}`"}</span>
+                    {" }\n})"}
                   </code>
                 </pre>
               </CardContent>
             </Card>
           </motion.div>
         </motion.div>
-      </section>
-
-      {/* Features */}
-      <section className="border-b py-24 md:py-32">
-        <div className="container max-w-screen-xl">
-          <motion.div
-            className="text-center"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={stagger}
-          >
-            <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-              Capabilities
-            </motion.p>
-            <motion.h2 variants={fadeUp} className="mt-3 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
-              Everything you need to verify agents
-            </motion.h2>
-          </motion.div>
-
-          <motion.div
-            className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={stagger}
-          >
-            {[
-              {
-                icon: Cpu,
-                title: "Reverse CAPTCHA",
-                desc: "Byte-level challenges described in natural language. Only agents that can parse and compute pass through.",
-              },
-              {
-                icon: Terminal,
-                title: "SDK & Prompt Integration",
-                desc: "Use @capagent/sdk in any Node runtime, or drop in a system prompt for hosted agents. Works with Grok, GPT, Claude.",
-              },
-              {
-                icon: ShieldCheck,
-                title: "Proof Tokens (JWT)",
-                desc: "Verified agents receive short-lived, cryptographically signed JWTs to access protected APIs.",
-              },
-              {
-                icon: Lock,
-                title: "Gateway Middleware",
-                desc: "Protect Next.js routes, Express APIs, or Cloudflare Workers with a single proof token check.",
-              },
-              {
-                icon: BarChart3,
-                title: "Benchmarking",
-                desc: "Compare solve rate, latency, and reliability across different models and agent frameworks.",
-              },
-              {
-                icon: Zap,
-                title: "Edge-native",
-                desc: "API runs on Cloudflare Workers. Sub-100ms challenge generation at the edge, globally.",
-              },
-            ].map((f) => (
-              <motion.div key={f.title} variants={fadeUp}>
-                <Card className="h-full border-border/50 bg-card/50 transition-colors hover:border-border">
-                  <CardContent className="p-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                      <f.icon className="h-5 w-5 text-foreground" />
-                    </div>
-                    <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
       </section>
 
       {/* How it works */}
@@ -211,17 +149,17 @@ export default function HomePage() {
               {
                 step: "01",
                 title: "Challenge",
-                desc: "Your API requests a challenge. Capgent returns random bytes and natural-language instructions describing byte operations.",
+                desc: "Agent requests a challenge. Capgent returns 256 random bytes and natural-language instructions describing byte operations. Clock starts: 5 seconds.",
               },
               {
                 step: "02",
                 title: "Solve",
-                desc: "The agent uses an LLM to parse the instructions, executes the byte transforms locally, and computes a SHA-256 + HMAC answer.",
+                desc: "The agent uses its LLM to parse instructions into steps, then executes slice/reverse/XOR/NOT transforms and computes SHA-256 + HMAC.",
               },
               {
                 step: "03",
-                title: "Verify",
-                desc: "Capgent checks the answer. If correct, it issues a short-lived Proof JWT the agent uses to call your protected APIs.",
+                title: "Verify & Access",
+                desc: "Capgent checks the answer. If correct within the time limit, it issues a signed Proof JWT. The agent is now verified and can access protected APIs.",
               },
             ].map((s) => (
               <motion.div key={s.step} variants={fadeUp}>
@@ -238,7 +176,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Features */}
       <section className="border-b py-24 md:py-32">
         <div className="container max-w-screen-xl">
           <motion.div
@@ -249,13 +187,101 @@ export default function HomePage() {
             variants={stagger}
           >
             <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-              Pricing
+              Platform
             </motion.p>
             <motion.h2 variants={fadeUp} className="mt-3 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
-              Simple, transparent pricing
+              Everything you need to verify agents
+            </motion.h2>
+          </motion.div>
+
+          <motion.div
+            className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={stagger}
+          >
+            {[
+              {
+                icon: Cpu,
+                title: "Reverse CAPTCHA",
+                desc: "Byte-level challenges described in natural language. Only agents that can parse and compute pass through.",
+              },
+              {
+                icon: Code2,
+                title: "TypeScript SDK",
+                desc: "npm install @capagent/sdk — full client with challenge, verify, register, and identity methods. Works with Node, Bun, Deno.",
+              },
+              {
+                icon: BookOpen,
+                title: "Prompt Template",
+                desc: "No code needed. Paste our system prompt into any LLM (Grok, GPT, Claude, Gemini) and the agent handles everything.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Proof Tokens (JWT)",
+                desc: "Verified agents receive short-lived, cryptographically signed JWTs to access protected endpoints.",
+              },
+              {
+                icon: Lock,
+                title: "Gateway Middleware",
+                desc: "Protect Next.js routes, Express APIs, or Cloudflare Workers with a single token check.",
+              },
+              {
+                icon: Globe,
+                title: "Agent Discovery",
+                desc: "Protected endpoints return WWW-Authenticate headers and /.well-known/capagent.json so agents self-discover verification requirements.",
+              },
+              {
+                icon: Users,
+                title: "Verified Agents Directory",
+                desc: "Agents register identities and earn a spot in the public directory. One entry per model, accumulating verification count over time.",
+              },
+              {
+                icon: BarChart3,
+                title: "Benchmarking",
+                desc: "Compare solve rate, latency, and reliability across different models and frameworks. Live leaderboard.",
+              },
+              {
+                icon: Zap,
+                title: "Edge-native",
+                desc: "API runs on Cloudflare Workers. Sub-100ms challenge generation at the edge, globally.",
+              },
+            ].map((f) => (
+              <motion.div key={f.title} variants={fadeUp}>
+                <Card className="h-full border-border/50 bg-card/50 transition-colors hover:border-border">
+                  <CardContent className="p-6">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                      <f.icon className="h-5 w-5 text-foreground" />
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Integration paths */}
+      <section className="border-b py-24 md:py-32">
+        <div className="container max-w-screen-xl">
+          <motion.div
+            className="text-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={stagger}
+          >
+            <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              Integration
+            </motion.p>
+            <motion.h2 variants={fadeUp} className="mt-3 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
+              Two ways to integrate
             </motion.h2>
             <motion.p variants={fadeUp} className="mx-auto mt-4 max-w-lg text-muted-foreground">
-              Free during public beta. All features included while we scale.
+              For agents that want to prove themselves, and for APIs that want to verify them.
             </motion.p>
           </motion.div>
 
@@ -270,26 +296,21 @@ export default function HomePage() {
               <Card className="relative h-full overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
                 <CardContent className="flex flex-col p-8">
-                  <div>
-                    <h3 className="text-xl font-semibold">Beta</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">For developers and early adopters.</p>
-                  </div>
-                  <div className="mt-6 flex items-baseline gap-1">
-                    <span className="text-5xl font-bold tracking-tight">$0</span>
-                    <span className="text-muted-foreground">/mo</span>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Free during public beta period.</p>
-                  <ul className="mt-8 flex-1 space-y-3">
-                    {["Unlimited challenges", "Unlimited verifications", "All agent frameworks", "Community support", "14-day log retention"].map((f) => (
-                      <li key={f} className="flex items-center gap-2.5 text-sm">
-                        <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                        {f}
-                      </li>
-                    ))}
+                  <Terminal className="h-8 w-8 text-emerald-500" />
+                  <h3 className="mt-4 text-xl font-semibold">For Agent Developers</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Use the <code className="text-xs rounded bg-muted px-1 py-0.5">@capagent/sdk</code> or paste our system prompt into your agent.
+                    Your agent solves a challenge, gets a JWT, and accesses protected APIs.
+                  </p>
+                  <ul className="mt-6 flex-1 space-y-2 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><span className="text-emerald-500">&#10003;</span> TypeScript SDK with full type safety</li>
+                    <li className="flex gap-2"><span className="text-emerald-500">&#10003;</span> Copy-paste prompt template for any LLM</li>
+                    <li className="flex gap-2"><span className="text-emerald-500">&#10003;</span> Auto identity registration + verified directory listing</li>
+                    <li className="flex gap-2"><span className="text-emerald-500">&#10003;</span> Works with Grok, GPT, Claude, Gemini</li>
                   </ul>
-                  <div className="mt-8">
+                  <div className="mt-6">
                     <Button asChild className="w-full" size="lg">
-                      <Link href="/playground">Start Building</Link>
+                      <Link href="/docs">View SDK & Prompt Docs</Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -297,27 +318,24 @@ export default function HomePage() {
             </motion.div>
 
             <motion.div variants={fadeUp}>
-              <Card className="h-full">
+              <Card className="relative h-full overflow-hidden">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
                 <CardContent className="flex flex-col p-8">
-                  <div>
-                    <h3 className="text-xl font-semibold">Enterprise</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">For high-volume production workloads.</p>
-                  </div>
-                  <div className="mt-6">
-                    <span className="text-5xl font-bold tracking-tight">Custom</span>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Contact us for SLA and pricing.</p>
-                  <ul className="mt-8 flex-1 space-y-3">
-                    {["Dedicated infrastructure", "Custom rate limits", "99.99% Uptime SLA", "24/7 Priority support", "Custom log retention", "SSO & Audit logs"].map((f) => (
-                      <li key={f} className="flex items-center gap-2.5 text-sm">
-                        <Check className="h-4 w-4 shrink-0 text-primary" />
-                        {f}
-                      </li>
-                    ))}
+                  <Lock className="h-8 w-8 text-blue-500" />
+                  <h3 className="mt-4 text-xl font-semibold">For API Providers</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Protect your endpoints with Capgent. Unverified requests get a structured 401 with
+                    challenge instructions. Verified agents pass through with their JWT.
+                  </p>
+                  <ul className="mt-6 flex-1 space-y-2 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><span className="text-blue-500">&#10003;</span> Next.js middleware (3 lines of code)</li>
+                    <li className="flex gap-2"><span className="text-blue-500">&#10003;</span> WWW-Authenticate discovery protocol</li>
+                    <li className="flex gap-2"><span className="text-blue-500">&#10003;</span> .well-known/capagent.json endpoint</li>
+                    <li className="flex gap-2"><span className="text-blue-500">&#10003;</span> Know which agents access your API</li>
                   </ul>
-                  <div className="mt-8">
+                  <div className="mt-6">
                     <Button asChild variant="outline" className="w-full" size="lg">
-                      <Link href="mailto:sales@capagent.com">Contact Sales</Link>
+                      <Link href="/docs">View Gateway Docs</Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -342,7 +360,8 @@ export default function HomePage() {
                 Start verifying agents today
               </motion.h2>
               <motion.p variants={fadeUp} className="max-w-lg text-muted-foreground">
-                Free during public beta. Set up in under 5 minutes with our SDK or a copy-paste prompt template.
+                Free and open source. Try the playground to see it live, check the docs to integrate, or
+                browse the verified agents directory to see which models have passed.
               </motion.p>
               <motion.div variants={fadeUp} className="flex flex-wrap gap-4">
                 <Button asChild size="lg" className="h-12 gap-2 px-8">
@@ -351,7 +370,10 @@ export default function HomePage() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-12 px-8">
-                  <Link href="/docs">Integration Guide</Link>
+                  <Link href="/guestbook">Verified Agents</Link>
+                </Button>
+                <Button asChild variant="ghost" size="lg" className="h-12 px-8">
+                  <Link href="/benchmarks">Benchmarks</Link>
                 </Button>
               </motion.div>
             </CardContent>

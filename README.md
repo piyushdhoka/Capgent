@@ -181,11 +181,20 @@ Update CORS:
   - Next.js (via `@capagent/gateway-next`):
 
     ```ts
+    import type { NextRequest } from "next/server";
     import { capagentMiddleware } from "@capagent/gateway-next";
 
-    export const middleware = capagentMiddleware({
-      protectedPrefixes: ["/protected"], // or your own app paths
+    const middlewareImpl = capagentMiddleware({
+      protectedPrefixes: ["/protected"] // or your own app paths
     });
+
+    export function middleware(req: NextRequest) {
+      return middlewareImpl(req);
+    }
+
+    export const config = {
+      matcher: ["/protected/:path*"]
+    };
     ```
 
   - The middleware will:

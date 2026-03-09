@@ -4,6 +4,8 @@ import { parseStepsWithOpenRouter } from "@capagent/sdk/parser/llm-openrouter";
 
 async function main() {
   const baseUrl = process.env.CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787";
+  const model =
+    process.env.OPENROUTER_GEMINI_MODEL ?? process.env.OPENROUTER_MODEL ?? "google/gemini-2.5-flash";
 
   const client = createClient({
     baseUrl,
@@ -11,100 +13,70 @@ async function main() {
     agentVersion: "0.0.1"
   });
 
-  // 1) Fetch natural-language challenge
+  const t0 = Date.now();
+
   const ch = await client.getChallenge();
-
-  // 2) Ask Gemini (via OpenRouter) to parse instructions into canonical steps
-  const geminiModel =
-    process.env.OPENROUTER_GEMINI_MODEL ?? process.env.OPENROUTER_MODEL ?? "google/gemini-3.0-flash-latest";
-
-  const steps = await parseStepsWithOpenRouter(ch.instructions ?? [], {
-    model: geminiModel
-  });
-
-  // 3) Compute answer + hmac from bytes + parsed steps
+  const steps = await parseStepsWithOpenRouter(ch.instructions ?? [], { model });
   const { answer, hmac } = await solveChallengeFromSteps({
     data_b64: ch.data_b64,
     nonce: ch.nonce,
     steps
   });
-
-  // 4) Verify with Capgent and get proof token
   const vr = await client.verifyChallenge(ch.challenge_id, answer, hmac);
 
-  // 5) Optional: call protected endpoint with the proof token
-  const pingRes = await fetch(`${baseUrl}/api/protected/ping`, {
-    headers: { authorization: `Bearer ${vr.token}` }
-  }).then((r) => r.json());
-
-  // 6) Register an identity for this Gemini agent and sign the guestbook
-  let identity: any = null;
-  let guestbook: any = null;
+  const solveMs = Date.now() - t0;
+  console.log(`Verified in ${solveMs}ms using ${model}`);
 
   try {
-    const registerRes = await fetch(`${baseUrl}/api/agents/register`, {
+    const reg = await client.registerAgent({
+      agent_name: "gemini-agent",
+      framework: "bun-agent",
+      model,
+      owner_org: "Capgent Sample"
+    });
+
+    if (reg.identity_token) {
+      await client.signGuestbook(
+        reg.identity_token,
+        `Signed by gemini-agent via ${model}. Challenge solved in ${solveMs}ms — XOR, reverse, slice, SHA-256, HMAC. No humans were involved.`,
+        solveMs
+      );
+      console.log("Signed guestbook");
+    }
+  } catch (e: any) {
+    console.error("Guestbook/identity error:", e?.message);
+  }
+
+  try {
+    await fetch(`${baseUrl}/api/benchmarks/report`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
+        model_id: model,
+        framework: "bun-agent",
         agent_name: "gemini-agent",
-        framework: "node-agent",
-        model: geminiModel,
-        owner_org: "Gemini Sample Agent"
-      })
+        agent_version: "0.0.1",
+        runs: 1,
+        successes: 1,
+        avg_ms: solveMs,
+        p95_ms: solveMs,
+      }),
     });
-
-    if (registerRes.ok) {
-      const reg = (await registerRes.json()) as {
-        agent_id: string;
-        agent_secret: string;
-        identity_token: string;
-        identity_expires_at: string;
-      };
-
-      identity = {
-        agent_id: reg.agent_id,
-        agent_secret: reg.agent_secret,
-        identity_expires_at: reg.identity_expires_at
-      };
-
-      const signRes = await fetch(`${baseUrl}/api/guestbook/sign`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${reg.identity_token}`
-        },
-        body: JSON.stringify({
-          message: "Verified via gemini-sample-agent."
-        })
-      });
-
-      if (signRes.ok) {
-        guestbook = await signRes.json();
-      }
-    }
+    console.log("Submitted benchmark report");
   } catch {
-    // Ignore guestbook/identity errors in sample script.
+    // non-critical
   }
 
-  console.log(
-    JSON.stringify(
-      {
-        verified: true,
-        model: geminiModel,
-        challenge_id: ch.challenge_id,
-        proof_expires_at: vr.expires_at,
-        protected_ping: pingRes,
-        identity,
-        guestbook
-      },
-      null,
-      2
-    )
-  );
+  console.log(JSON.stringify({
+    verified: true,
+    model,
+    challenge_id: ch.challenge_id,
+    solve_ms: solveMs,
+    proof_expires_at: vr.expires_at,
+  }, null, 2));
 }
 
 main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

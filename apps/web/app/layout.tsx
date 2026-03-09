@@ -1,6 +1,7 @@
 import "./globals.css"
 import type { ReactNode } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import type { Metadata } from "next"
 import { Inter, Instrument_Serif } from "next/font/google"
 import { cn } from "@/lib/utils"
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
   title: "Capgent — Agent Verification Infrastructure",
   description:
     "Verify AI agent capabilities with reverse CAPTCHA challenges. Issue proof tokens. Gate your APIs.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -34,9 +38,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="container flex h-16 max-w-screen-xl items-center justify-between">
               <div className="flex items-center gap-8">
                 <Link href="/" className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                    <span className="text-sm font-bold text-primary-foreground">C</span>
-                  </div>
+                  <Image
+                    src="/logo.png"
+                    alt="Capgent logo"
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 object-contain"
+                    priority
+                  />
                   <span className="text-lg font-bold tracking-tight">Capgent</span>
                 </Link>
                 <nav className="hidden items-center gap-6 text-sm md:flex">
@@ -49,15 +58,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <Link href="/benchmarks" className="text-muted-foreground transition-colors hover:text-foreground">
                     Benchmarks
                   </Link>
-                  <Link href="/pricing" className="text-muted-foreground transition-colors hover:text-foreground">
-                    Pricing
+                  <Link href="/guestbook" className="text-muted-foreground transition-colors hover:text-foreground">
+                    Verified Agents
                   </Link>
                 </nav>
               </div>
               <div className="flex items-center gap-3">
-                <Link href="/tokens" className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-block">
-                  JWT Debugger
-                </Link>
                 <Button asChild size="sm">
                   <Link href="/playground">Try Demo</Link>
                 </Button>
@@ -74,9 +80,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
-                      <span className="text-xs font-bold text-primary-foreground">C</span>
-                    </div>
+                    <Image
+                      src="/logo.png"
+                      alt="Capgent logo"
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 object-contain"
+                    />
                     <span className="font-bold">Capgent</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -88,14 +98,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                     <Link href="/playground" className="hover:text-foreground">Playground</Link>
                     <Link href="/benchmarks" className="hover:text-foreground">Benchmarks</Link>
-                    <Link href="/pricing" className="hover:text-foreground">Pricing</Link>
+                    <Link href="/guestbook" className="hover:text-foreground">Verified Agents</Link>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <p className="text-sm font-semibold">Developers</p>
                   <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                     <Link href="/docs" className="hover:text-foreground">Documentation</Link>
-                    <Link href="/tokens" className="hover:text-foreground">JWT Debugger</Link>
                     <a href="https://www.npmjs.com/package/@capagent/sdk" className="hover:text-foreground">npm</a>
                   </div>
                 </div>

@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ShieldCheck, Loader2, AlertCircle } from "lucide-react"
 import * as motion from "motion/react-client"
 
@@ -15,12 +17,11 @@ export default function ProtectedPage() {
   useEffect(() => {
     (async () => {
       try {
-        const token = document.cookie
-          .split(";")
-          .map((s) => s.trim())
-          .find((s) => s.startsWith("capagent_proof="))
-          ?.split("=")[1]
-        if (!token) throw new Error("No capagent_proof cookie found. Complete the playground flow first.")
+        const cookies = document.cookie.split(";").map((s) => s.trim())
+        const token =
+          cookies.find((s) => s.startsWith("capagent_proof="))?.split("=")[1] ??
+          cookies.find((s) => s.startsWith("capagent_identity="))?.split("=")[1]
+        if (!token) throw new Error("No proof or identity token found. Complete the playground flow first.")
         const res = await fetch(`${baseUrl}/api/protected/ping`, {
           headers: { authorization: `Bearer ${token}` },
         })
@@ -70,27 +71,42 @@ export default function ProtectedPage() {
         )}
 
         {data && (
-          <Card className="mt-8">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <ShieldCheck className="h-5 w-5 text-emerald-500" />
+          <>
+            <Card className="mt-8">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Access Granted</CardTitle>
+                    <CardDescription>The gateway accepted your proof token. This endpoint is protected by Capgent.</CardDescription>
+                  </div>
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <CardTitle className="text-base">Access Granted</CardTitle>
-                  <CardDescription>The gateway accepted your proof token.</CardDescription>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Decoded Token Claims</p>
+                  <div className="rounded-lg bg-neutral-950 p-4">
+                    <pre className="overflow-auto font-mono text-xs text-neutral-200">
+                      {JSON.stringify(data, null, 2)}
+                    </pre>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Backend Response</p>
-              <div className="rounded-lg bg-neutral-950 p-4">
-                <pre className="overflow-auto font-mono text-xs text-neutral-200">
-                  {JSON.stringify(data, null, 2)}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex flex-wrap gap-3">
+                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                    <Link href="/guestbook">View Guestbook</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                    <Link href="/benchmarks">View Benchmarks</Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm" className="gap-1.5">
+                    <Link href="/playground">Back to Playground</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </>
         )}
       </motion.div>
     </div>

@@ -18,9 +18,9 @@ export type ProofToken = {
 };
 
 export type CapagentClientOptions = {
-  baseUrl: string;
+  baseUrl?: string;
   agentName: string;
-  agentVersion: string;
+  agentVersion?: string;
 };
 
 export type RegisterAgentRequest = {
@@ -49,6 +49,29 @@ export type IssueIdentityTokenResponse = {
   expires_at: string;
 };
 
+export type CapagentErrorCode =
+  | "challenge_failed"
+  | "verify_failed"
+  | "protected_ping_failed"
+  | "agent_register_failed"
+  | "identity_token_failed"
+  | "guestbook_sign_failed";
+
+export class CapagentError extends Error {
+  readonly code: CapagentErrorCode;
+  readonly status: number;
+  readonly endpoint: string;
+  readonly details: unknown;
+
+  constructor(code: CapagentErrorCode, message: string, status: number, endpoint: string, details?: unknown) {
+    super(message);
+    this.code = code;
+    this.status = status;
+    this.endpoint = endpoint;
+    this.details = details;
+  }
+}
+
 export function withCapagentProof(token: string, init?: RequestInit): RequestInit {
   const headers = new Headers(init?.headers);
   headers.set("authorization", `Bearer ${token}`);
@@ -67,39 +90,70 @@ export function decodeJwtClaims(token: string): Record<string, unknown> {
   return JSON.parse(json);
 }
 
+async function handleJsonError(
+  res: Response,
+  endpoint: string,
+  code: CapagentErrorCode
+): Promise<never> {
+  let details: unknown = null;
+  try {
+    const text = await res.text();
+    try {
+      details = text ? JSON.parse(text) : null;
+    } catch {
+      details = text;
+    }
+  } catch {
+    // ignore body parse errors
+  }
+
+  const baseMessage = `${code} (${res.status})`;
+  throw new CapagentError(code, baseMessage, res.status, endpoint, details);
+}
+
 export function createClient(opts: CapagentClientOptions) {
-  const baseUrl = opts.baseUrl.replace(/\/+$/, "");
+  const baseUrl = (opts.baseUrl || "http://localhost:8787").replace(/\/+$/, "");
+  const agentVersion = opts.agentVersion || "0.0.0";
 
   return {
     async getChallenge(): Promise<ChallengeResponse> {
-      const res = await fetch(`${baseUrl}/api/challenge`, {
+      const endpoint = "/api/challenge";
+      const res = await fetch(`${baseUrl}${endpoint}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           agent_name: opts.agentName,
-          agent_version: opts.agentVersion
+          agent_version: agentVersion
         })
       });
-      if (!res.ok) throw new Error(`challenge failed: ${res.status}`);
+      if (!res.ok) {
+        await handleJsonError(res, endpoint, "challenge_failed");
+      }
       return await res.json();
     },
     async verifyChallenge(challengeId: string, answer: string, hmac: string): Promise<VerifyResponse> {
-      const res = await fetch(`${baseUrl}/api/verify/${encodeURIComponent(challengeId)}`, {
+      const endpoint = `/api/verify/${encodeURIComponent(challengeId)}`;
+      const res = await fetch(`${baseUrl}${endpoint}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           answer,
           hmac,
           agent_name: opts.agentName,
-          agent_version: opts.agentVersion
+          agent_version: agentVersion
         })
       });
-      if (!res.ok) throw new Error(`verify failed: ${res.status}`);
+      if (!res.ok) {
+        await handleJsonError(res, endpoint, "verify_failed");
+      }
       return await res.json();
     },
     async protectedPing(proofJwt: string) {
-      const res = await fetch(`${baseUrl}/api/protected/ping`, withCapagentProof(proofJwt));
-      if (!res.ok) throw new Error(`protected ping failed: ${res.status}`);
+      const endpoint = "/api/protected/ping";
+      const res = await fetch(`${baseUrl}${endpoint}`, withCapagentProof(proofJwt));
+      if (!res.ok) {
+        await handleJsonError(res, endpoint, "protected_ping_failed");
+      }
       return await res.json();
     },
     async registerAgent(req: RegisterAgentRequest): Promise<RegisterAgentResponse> {
@@ -107,7 +161,8 @@ export function createClient(opts: CapagentClientOptions) {
       if (req.adminKey) {
         (headers as any)["x-capagent-admin-key"] = req.adminKey;
       }
-      const res = await fetch(`${baseUrl}/api/agents/register`, {
+      const endpoint = "/api/agents/register";
+      const res = await fetch(`${baseUrl}${endpoint}`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -117,11 +172,14 @@ export function createClient(opts: CapagentClientOptions) {
           owner_org: req.owner_org
         })
       });
-      if (!res.ok) throw new Error(`agent register failed: ${res.status}`);
+      if (!res.ok) {
+        await handleJsonError(res, endpoint, "agent_register_failed");
+      }
       return (await res.json()) as RegisterAgentResponse;
     },
     async issueIdentityToken(req: IssueIdentityTokenRequest): Promise<IssueIdentityTokenResponse> {
-      const res = await fetch(`${baseUrl}/api/agents/token`, {
+      const endpoint = "/api/agents/token";
+      const res = await fetch(`${baseUrl}${endpoint}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -130,19 +188,24 @@ export function createClient(opts: CapagentClientOptions) {
           proof_token: req.proof_token
         })
       });
-      if (!res.ok) throw new Error(`identity token failed: ${res.status}`);
+      if (!res.ok) {
+        await handleJsonError(res, endpoint, "identity_token_failed");
+      }
       return (await res.json()) as IssueIdentityTokenResponse;
     },
-    async signGuestbook(identityToken: string, message: string) {
-      const res = await fetch(`${baseUrl}/api/guestbook/sign`, {
+    async signGuestbook(identityToken: string, message: string, solveMs?: number) {
+      const endpoint = "/api/guestbook/sign";
+      const res = await fetch(`${baseUrl}${endpoint}`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
           authorization: `Bearer ${identityToken}`
         },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, solve_ms: solveMs ?? 0 })
       });
-      if (!res.ok) throw new Error(`guestbook sign failed: ${res.status}`);
+      if (!res.ok) {
+        await handleJsonError(res, endpoint, "guestbook_sign_failed");
+      }
       return await res.json();
     }
   };
