@@ -20,10 +20,10 @@ type BenchmarkReport = {
 }
 
 type AnalyticsPageProps = {
-  searchParams?: { project_id?: string }
+  searchParams: Promise<{ project_id?: string }>
 }
 
-export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
+export default async function AnalyticsPage(props: AnalyticsPageProps) {
   const session = await auth.api.getSession({
     headers: await headers(),
   })
@@ -40,6 +40,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
   const json = (await res.json().catch(() => null)) as { reports?: BenchmarkReport[] } | null
   const allReports = json?.reports ?? []
 
+  const searchParams = await props.searchParams
   const selectedProjectId = searchParams?.project_id?.trim() || ""
   const reports = selectedProjectId
     ? allReports.filter((r) => (r.project_id ?? "").toLowerCase() === selectedProjectId.toLowerCase())
