@@ -64,9 +64,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </nav>
               </div>
               <div className="flex items-center gap-3">
-                <Button asChild size="sm">
-                  <Link href="/playground">Try Demo</Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href="/login">Sign in</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link href="/playground">Try Demo</Link>
+                  </Button>
+                </div>
               </div>
             </div>
           </header>

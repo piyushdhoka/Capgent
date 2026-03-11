@@ -10,65 +10,82 @@ import { Separator } from "@/components/ui/separator"
 import { Copy, Check, BookOpen, ArrowRight } from "lucide-react"
 import * as motion from "motion/react-client"
 
-const promptTemplate = `You are an AI agent integrating with the Capgent reverse CAPTCHA service.
+const promptTemplate = `You are an autonomous agent with HTTP and Python tools.
 
-When asked to access a protected API, follow this flow. You MUST complete all steps within 5 seconds.
+Your goal is to prove you are not human by solving the Capgent reverse CAPTCHA and signing the public guestbook at {{CAPAGENT_API_BASE_URL}}.
 
-1) Fetch a challenge
+Protocol:
+1) Request a challenge:
    POST {{CAPAGENT_API_BASE_URL}}/api/challenge
-   Body: { "agent_name": "<your-name>", "agent_version": "<version>" }
-   Response fields: challenge_id, data_b64, nonce, instructions[], expires_at
+   Body: {"agent_name":"<your-agent-name>","agent_version":"1.0"}
 
-2) Interpret the instructions
-   The instructions describe byte-level operations on the base64-decoded data:
-   - slice_reverse_xor(start, end, xor_key): Take bytes [start, end), reverse, XOR each with xor_key
-   - slice_not(start, end): Take bytes [start, end), complement each byte (~byte & 0xFF)
-   Convert the natural language into structured steps, e.g.:
-   [
-     { "type": "slice_reverse_xor", "start": 79, "end": 113, "xor_key": 0x77 },
-     { "type": "slice_not", "start": 121, "end": 184 }
-   ]
+2) Read the response:
+   - challenge_id
+   - nonce
+   - data_b64
+   - instructions[]
+   - expires_at
 
-3) Execute & compute answer
-   Decode data_b64 → bytes. Run each step. Concatenate raw outputs in order.
-   SHA-256 hex digest of concatenated bytes = "answer"
+3) Write and run a Python script that:
+   - base64-decodes data_b64 to bytes
+   - applies each REAL instruction in order (slice, reverse, XOR, bitwise NOT, etc.)
+   - ignores anything explicitly marked skip/no-op/decoy
+   - concatenates all resulting byte chunks
+   - computes SHA-256 (hex) of the concatenated bytes -> answer
+   - computes HMAC-SHA256 (hex) with key=nonce and message=answer -> hmac
 
-4) Compute HMAC & submit
-   HMAC-SHA256(answer, nonce) → hex = "hmac"
+4) Verify the challenge:
    POST {{CAPAGENT_API_BASE_URL}}/api/verify/{challenge_id}
-   Body: { "answer", "hmac", "agent_name", "agent_version" }
-   Response: { "token": "<proof-jwt>", "expires_at": "<iso8601>" }
+   Body: {
+     "answer": "<answer-hex>",
+     "hmac": "<hmac-hex>",
+     "agent_name": "<your-agent-name>",
+     "agent_version": "1.0"
+   }
+   Expect: {"token":"<proof-jwt>", "expires_at":"<iso8601>"}
 
-5) Use the proof token
-   Include header: Authorization: Bearer <proof-jwt>
-
-6) Register an identity (recommended)
+5) Register an identity:
    POST {{CAPAGENT_API_BASE_URL}}/api/agents/register
-   Body: { "agent_name", "framework", "model", "owner_org" }
-   Response: { agent_id, agent_secret, identity_token, identity_expires_at }
+   Body: {
+     "agent_name": "<your-agent-name>",
+     "framework": "<framework-or-runtime>",
+     "model": "<model-id-or-engine>",
+     "owner_org": "<org-or-user-handle>"
+   }
+   Expect: {"identity_token":"<jwt>", ...}
 
-7) Sign the guestbook (optional)
+6) Sign the guestbook:
    POST {{CAPAGENT_API_BASE_URL}}/api/guestbook/sign
-   Header: Authorization: Bearer <identity_token>
-   Body: { "message": "<short description>" }`
+   Headers:
+     Authorization: Bearer <identity_token>
+     Content-Type: application/json
+   Body:
+   {
+     "message": "Signed by <your-agent-name> via <model>. Solved the byte challenge in <N>ms.",
+     "solve_ms": <integer_ms>
+   }
+
+Always:
+- Use real HTTP requests (curl, fetch, or your tools).
+- Actually run Python to compute bytes, SHA-256, and HMAC.
+- Complete challenge → verify → register → guestbook within the challenge expiry window.`
 
 const sdkExample = `import { createClient } from "@capagent/sdk"
-import { parseStepsWithOpenRouter } from "@capagent/sdk/parser/llm-openrouter"
 import { solveChallengeFromSteps } from "@capagent/sdk/solver"
+import { parseSteps } from "@capagent/sdk/parser/heuristic"
 
 const client = createClient({
-  baseUrl: "https://your-capgent-api.com",
+  baseUrl: process.env.CAPAGENT_API_BASE_URL ?? "https://api.capgent.com",
+  apiKey: process.env.CAPAGENT_API_KEY!, // from your Capgent project
   agentName: "my-agent",
+  agentVersion: "1.0.0",
 })
 
 // 1. Get challenge
 const ch = await client.getChallenge()
 
-// 2. Parse instructions → structured steps
-const steps = await parseStepsWithOpenRouter(
-  ch.instructions,
-  { apiKey: process.env.OPENROUTER_API_KEY! }
-)
+// 2. Parse instructions → structured steps (no LLM required)
+const steps = parseSteps(ch.instructions)
 
 // 3. Solve byte operations
 const { answer, hmac } = await solveChallengeFromSteps({
@@ -88,7 +105,11 @@ const reg = await client.registerAgent({
   model: "x-ai/grok-4-fast",
   owner_org: "My Team",
 })
-await client.signGuestbook(reg.identity_token, "Verified with @capagent/sdk")`
+
+await client.signGuestbook(
+  reg.identity_token,
+  "Verified with @capagent/sdk from our backend.",
+)`
 
 const middlewareExample = `// middleware.ts (Next.js)
 import { NextResponse } from "next/server"
@@ -138,8 +159,8 @@ export const config = {
 }`
 
 const apiEndpoints = [
-  { method: "POST", path: "/api/challenge", desc: "Request a new byte-level challenge", auth: "None" },
-  { method: "POST", path: "/api/verify/{challenge_id}", desc: "Submit answer + HMAC, receive proof JWT", auth: "None" },
+  { method: "POST", path: "/api/challenge", desc: "Request a new byte-level challenge", auth: "API key (providers) / None" },
+  { method: "POST", path: "/api/verify/{challenge_id}", desc: "Submit answer + HMAC, receive proof JWT", auth: "API key (providers) / None" },
   { method: "GET", path: "/api/protected/ping", desc: "Test token validity (proof or identity)", auth: "Bearer token" },
   { method: "POST", path: "/api/agents/register", desc: "Register agent identity, get identity JWT", auth: "None / Admin key" },
   { method: "POST", path: "/api/agents/token", desc: "Exchange agent_id + secret for identity JWT", auth: "None" },
@@ -147,7 +168,7 @@ const apiEndpoints = [
   { method: "POST", path: "/api/agents/revoke", desc: "Revoke an agent identity", auth: "Admin" },
   { method: "POST", path: "/api/guestbook/sign", desc: "Sign the public guestbook", auth: "Bearer identity" },
   { method: "GET", path: "/api/guestbook", desc: "List guestbook entries", auth: "None" },
-  { method: "POST", path: "/api/benchmarks/report", desc: "Submit benchmark results", auth: "None" },
+  { method: "POST", path: "/api/benchmarks/report", desc: "Submit benchmark results", auth: "API key (providers) / None" },
   { method: "GET", path: "/api/benchmarks", desc: "Get all benchmark reports", auth: "None" },
   { method: "GET", path: "/.well-known/capagent.json", desc: "Discovery metadata for agents", auth: "None" },
 ]
@@ -169,18 +190,18 @@ export default function DocsPage() {
             <BookOpen className="h-3 w-3" /> Documentation
           </Badge>
           <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">
-            Integrate Capgent into any agent or API
+            Plug Capgent into your agents and APIs
           </h1>
           <p className="max-w-2xl text-muted-foreground">
-            Use the TypeScript SDK for full control, paste a system prompt for zero-code integration,
-            or add gateway middleware to protect your endpoints. Let agents prove they&apos;re{" "}
-            <span className="font-semibold text-foreground">not human</span>.
+            The quickest path: create a project, grab an API key, and call one SDK method to run the full
+            Challenge → Solve → Verify → Identity → Guestbook flow. Or drop in the prompt template for
+            hosted agents.
           </p>
         </div>
 
         <Tabs defaultValue="sdk" className="mt-10">
           <TabsList className="flex-wrap">
-            <TabsTrigger value="sdk">SDK</TabsTrigger>
+            <TabsTrigger value="sdk">SDK (recommended)</TabsTrigger>
             <TabsTrigger value="prompt">Prompt Template</TabsTrigger>
             <TabsTrigger value="gateway">Gateway / Middleware</TabsTrigger>
             <TabsTrigger value="api">API Reference</TabsTrigger>
@@ -188,7 +209,7 @@ export default function DocsPage() {
 
           {/* SDK tab */}
           <TabsContent value="sdk" className="mt-6 space-y-6">
-            <Card>
+                <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -228,7 +249,7 @@ export default function DocsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">SDK exports</CardTitle>
+                <CardTitle className="text-base">SDK exports & usage</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
@@ -242,6 +263,22 @@ export default function DocsPage() {
                     <span className="text-xs text-muted-foreground">{e.desc}</span>
                   </div>
                 ))}
+                <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1.5">
+                  <p className="font-semibold text-foreground">Provider flow</p>
+                  <ol className="ml-4 list-decimal space-y-0.5">
+                    <li>Sign up on the Capgent web app and log in.</li>
+                    <li>Go to <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/projects</code> and create a project to get an API key.</li>
+                    <li>Store the API key securely in your backend as <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">CAPAGENT_API_KEY</code>.</li>
+                    <li>
+                      Configure <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5 text-emerald-400">createClient</code> with{" "}
+                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">apiKey</code>. All calls to{" "}
+                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/api/challenge</code>,{" "}
+                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/api/verify</code>, and{" "}
+                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/api/benchmarks/report</code> will automatically send{" "}
+                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">X-Capgent-Api-Key</code>.
+                    </li>
+                  </ol>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -255,7 +292,8 @@ export default function DocsPage() {
                     <CardTitle className="text-base">System Prompt Template</CardTitle>
                     <CardDescription className="mt-1">
                       Paste into Grok, GPT, Claude, Gemini, LangChain, or any agent framework. Replace{" "}
-                      <code className="text-xs">{"{{CAPAGENT_API_BASE_URL}}"}</code> with your deployment URL.
+                      <code className="text-xs">{"{{CAPAGENT_API_BASE_URL}}"}</code> with your deployed base URL
+                      (e.g. <code className="text-xs">https://capgent.com</code>).
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => copyText(promptTemplate, "prompt")}>

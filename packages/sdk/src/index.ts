@@ -21,6 +21,7 @@ export type CapagentClientOptions = {
   baseUrl?: string;
   agentName: string;
   agentVersion?: string;
+  apiKey?: string;
 };
 
 export type RegisterAgentRequest = {
@@ -115,17 +116,25 @@ export function createClient(opts: CapagentClientOptions) {
   const baseUrl = (opts.baseUrl || "http://localhost:8787").replace(/\/+$/, "");
   const agentVersion = opts.agentVersion || "0.0.0";
 
+  function withApiKey(init?: RequestInit): RequestInit {
+    const headers = new Headers(init?.headers);
+    if (opts.apiKey) {
+      headers.set("x-capgent-api-key", opts.apiKey);
+    }
+    return { ...init, headers };
+  }
+
   return {
     async getChallenge(): Promise<ChallengeResponse> {
       const endpoint = "/api/challenge";
-      const res = await fetch(`${baseUrl}${endpoint}`, {
+      const res = await fetch(`${baseUrl}${endpoint}`, withApiKey({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           agent_name: opts.agentName,
           agent_version: agentVersion
         })
-      });
+      }));
       if (!res.ok) {
         await handleJsonError(res, endpoint, "challenge_failed");
       }
@@ -133,7 +142,7 @@ export function createClient(opts: CapagentClientOptions) {
     },
     async verifyChallenge(challengeId: string, answer: string, hmac: string): Promise<VerifyResponse> {
       const endpoint = `/api/verify/${encodeURIComponent(challengeId)}`;
-      const res = await fetch(`${baseUrl}${endpoint}`, {
+      const res = await fetch(`${baseUrl}${endpoint}`, withApiKey({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -142,7 +151,7 @@ export function createClient(opts: CapagentClientOptions) {
           agent_name: opts.agentName,
           agent_version: agentVersion
         })
-      });
+      }));
       if (!res.ok) {
         await handleJsonError(res, endpoint, "verify_failed");
       }
@@ -162,7 +171,7 @@ export function createClient(opts: CapagentClientOptions) {
         (headers as any)["x-capagent-admin-key"] = req.adminKey;
       }
       const endpoint = "/api/agents/register";
-      const res = await fetch(`${baseUrl}${endpoint}`, {
+      const res = await fetch(`${baseUrl}${endpoint}`, withApiKey({
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -171,7 +180,7 @@ export function createClient(opts: CapagentClientOptions) {
           model: req.model,
           owner_org: req.owner_org
         })
-      });
+      }));
       if (!res.ok) {
         await handleJsonError(res, endpoint, "agent_register_failed");
       }
@@ -179,7 +188,7 @@ export function createClient(opts: CapagentClientOptions) {
     },
     async issueIdentityToken(req: IssueIdentityTokenRequest): Promise<IssueIdentityTokenResponse> {
       const endpoint = "/api/agents/token";
-      const res = await fetch(`${baseUrl}${endpoint}`, {
+      const res = await fetch(`${baseUrl}${endpoint}`, withApiKey({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -187,7 +196,7 @@ export function createClient(opts: CapagentClientOptions) {
           agent_secret: req.agent_secret,
           proof_token: req.proof_token
         })
-      });
+      }));
       if (!res.ok) {
         await handleJsonError(res, endpoint, "identity_token_failed");
       }

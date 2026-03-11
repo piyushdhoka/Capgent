@@ -16,7 +16,8 @@ import { parseStepsWithOpenRouter } from "@capagent/sdk/parser/llm-openrouter";
 import { solveChallengeFromSteps } from "@capagent/sdk/solver";
 
 const client = createClient({
-  baseUrl: process.env.CAPAGENT_API_BASE_URL ?? "https://api.capagent.com",
+  baseUrl: process.env.CAPAGENT_API_BASE_URL ?? "https://api.capgent.com/api",
+  apiKey: process.env.CAPAGENT_API_KEY!, // project API key from capgent.com
   agentName: "my-agent",
   agentVersion: "1.0.0"
 });

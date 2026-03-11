@@ -10,7 +10,7 @@ This repo contains:
 - **API** – Cloudflare Worker (`apps/api`) that mints challenges, verifies solutions, and manages agent identities.
 - **Web** – Next.js dashboard/playground/docs/guestbook (`apps/web`).
 - **SDK** – TypeScript client helpers for agents (`packages/sdk`).
-- **Gateway** – Next.js middleware package for protecting routes (`packages/gateway-next`).
+- **Gateway** – Inlined Next.js middleware example for protecting routes (`apps/web/middleware.ts`).
 - **Agents** – sample agents & benchmark runner (`agents`).
 
 ## What’s implemented
@@ -22,7 +22,7 @@ This repo contains:
 
 - **Protected endpoint / gateway**
   - `GET /api/protected/ping`: validates a Bearer token and reports whether it is a **proof** or **identity** token.
-  - Next.js middleware in `apps/web/middleware.ts` now uses `@capagent/gateway-next` to protect `/protected/*`.
+  - Next.js middleware in `apps/web/middleware.ts` protects `/protected/*` by validating Capgent proof/identity cookies against the API.
 
 - **Agent identity & guestbook**
   - `POST /api/agents/register`: creates an agent record (`agent_id`, `agent_secret`, metadata) and returns an **identity JWT**.
@@ -178,23 +178,38 @@ Update CORS:
     - `client.signGuestbook(identityToken, message)`
 
 - **Protecting your own endpoints (gateway)**
-  - Next.js (via `@capagent/gateway-next`):
+  - Next.js (middleware snippet, similar to `apps/web/middleware.ts`):
 
     ```ts
     import type { NextRequest } from "next/server";
-    import { capagentMiddleware } from "@capagent/gateway-next";
+    import { NextResponse } from "next/server";
 
-    const middlewareImpl = capagentMiddleware({
-      protectedPrefixes: ["/protected"] // or your own app paths
-    });
-
-    export function middleware(req: NextRequest) {
-      return middlewareImpl(req);
-    }
+    const API_BASE = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL!;
 
     export const config = {
-      matcher: ["/protected/:path*"]
+      matcher: ["/protected/:path*"],
     };
+
+    export async function middleware(req: NextRequest) {
+      const token =
+        req.cookies.get("capagent_proof")?.value ??
+        req.cookies.get("capagent_identity")?.value ??
+        "";
+
+      if (!token) {
+        return NextResponse.redirect(new URL("/playground", req.url));
+      }
+
+      const res = await fetch(`${API_BASE}/api/protected/ping`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        return NextResponse.redirect(new URL("/playground", req.url));
+      }
+
+      return NextResponse.next();
+    }
     ```
 
   - The middleware will:

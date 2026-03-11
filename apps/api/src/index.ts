@@ -22,6 +22,8 @@ import { createInMemoryStore, createRedisStore, type Store } from "./storage/sto
 import { AgentIdentityClaims, signIdentityJwt, signProofJwt, verifyIdentityJwt, verifyProofJwt } from "./auth/jwt";
 import type { AgentRecord } from "./identity/store";
 import { getAgentById, revokeAgent, saveAgent } from "./identity/store";
+import type { ApiKeyRecord, Project } from "./projects/store";
+import { getProjectById, getProjectForApiKeyHash, listApiKeysForProject, saveApiKey, saveProject } from "./projects/store";
 import type { GuestbookEntry } from "./guestbook/store";
 import { addGuestbookEntry, getGuestbookEntries, clearGuestbook } from "./guestbook/store";
 
@@ -33,6 +35,7 @@ type BenchmarkReport = {
   framework: string;
   agent_name: string;
   agent_version: string;
+  project_id?: string;
   runs: number;
   successes: number;
   success_runs: number;
@@ -52,6 +55,17 @@ type AgentTokenRequest = {
   agent_id?: string;
   agent_secret?: string;
   proof_token?: string;
+};
+
+type ProjectCreateRequest = {
+  name?: string;
+  owner_email?: string;
+  label?: string;
+};
+
+type ProjectKeyCreateRequest = {
+  project_id?: string;
+  label?: string;
 };
 
 async function sha256HexOfString(input: string) {
@@ -130,6 +144,34 @@ function getSpamMessageError(message: string): string | null {
   return null;
 }
 
+async function hashApiKeySecret(secret: string): Promise<string> {
+  return sha256HexOfString(secret);
+}
+
+type ApiKeyContext = {
+  project: Project;
+  apiKey: ApiKeyRecord;
+};
+
+async function getApiKeyContext(
+  c: { env: Env; req: { header(name: string): string | undefined } }
+): Promise<ApiKeyContext | null> {
+  const header =
+    c.req.header("x-capgent-api-key") ??
+    c.req.header("X-Capgent-Api-Key") ??
+    "";
+  const apiKeyPlain = header.trim();
+  if (!apiKeyPlain) {
+    return null;
+  }
+  const keyHash = await hashApiKeySecret(apiKeyPlain);
+  const ctx = await getProjectForApiKeyHash(c.env, keyHash);
+  if (!ctx) {
+    return null;
+  }
+  return ctx;
+}
+
 app.onError((err, c) => {
   console.error("capagent_error", err);
   return c.json({ error: "internal_error", message: err?.message ?? String(err) }, 500);
@@ -154,6 +196,116 @@ app.use("*", async (c, next) => {
 });
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+app.post("/api/projects", async (c) => {
+  const adminKey = getAdminApiKey(c.env);
+  const header = c.req.header("x-capagent-admin-key") ?? "";
+  if (!adminKey || header !== adminKey) {
+    return c.json({ error: "admin_key_required" }, 401);
+  }
+
+  const body = (await c.req.json().catch(() => null)) as ProjectCreateRequest | null;
+  const name = body?.name?.trim();
+  if (!name) return c.json({ error: "missing_project_name" }, 400);
+
+  const now = new Date().toISOString();
+  const projectId = crypto.randomUUID();
+  const project: Project = {
+    project_id: projectId,
+    name,
+    created_at: now,
+    owner_email: body?.owner_email?.trim() || null,
+    status: "active"
+  };
+
+  const keyId = crypto.randomUUID();
+  const rawKey = `capg_sk_${crypto.randomUUID().replace(/-/g, "")}`;
+  const keyHash = await hashApiKeySecret(rawKey);
+  const apiKey: ApiKeyRecord = {
+    key_id: keyId,
+    project_id: projectId,
+    key_hash: keyHash,
+    label: body?.label?.trim() || null,
+    created_at: now,
+    last_used_at: null,
+    revoked_at: null
+  };
+
+  await saveProject(c.env, project);
+  await saveApiKey(c.env, apiKey);
+
+  return c.json({
+    project: {
+      project_id: project.project_id,
+      name: project.name,
+      created_at: project.created_at,
+      owner_email: project.owner_email,
+      status: project.status
+    },
+    api_key: rawKey
+  });
+});
+
+app.post("/api/projects/keys", async (c) => {
+  const adminKey = getAdminApiKey(c.env);
+  const header = c.req.header("x-capagent-admin-key") ?? "";
+  if (!adminKey || header !== adminKey) {
+    return c.json({ error: "admin_key_required" }, 401);
+  }
+
+  const body = (await c.req.json().catch(() => null)) as ProjectKeyCreateRequest | null;
+  const projectId = body?.project_id?.trim();
+  if (!projectId) return c.json({ error: "missing_project_id" }, 400);
+
+  const project = await getProjectById(c.env, projectId);
+  if (!project) return c.json({ error: "project_not_found" }, 404);
+
+  const now = new Date().toISOString();
+  const keyId = crypto.randomUUID();
+  const rawKey = `capg_sk_${crypto.randomUUID().replace(/-/g, "")}`;
+  const keyHash = await hashApiKeySecret(rawKey);
+  const apiKey: ApiKeyRecord = {
+    key_id: keyId,
+    project_id: projectId,
+    key_hash: keyHash,
+    label: body?.label?.trim() || null,
+    created_at: now,
+    last_used_at: null,
+    revoked_at: null
+  };
+
+  await saveApiKey(c.env, apiKey);
+
+  return c.json({
+    project_id: projectId,
+    api_key: rawKey
+  });
+});
+
+app.get("/api/projects/:projectId", async (c) => {
+  const adminKey = getAdminApiKey(c.env);
+  const header = c.req.header("x-capagent-admin-key") ?? "";
+  if (!adminKey || header !== adminKey) {
+    return c.json({ error: "admin_key_required" }, 401);
+  }
+
+  const projectId = c.req.param("projectId");
+  const project = await getProjectById(c.env, projectId);
+  if (!project) return c.json({ error: "project_not_found" }, 404);
+
+  const keys = await listApiKeysForProject(c.env, projectId);
+
+  return c.json({
+    project,
+    api_keys: keys.map((k) => ({
+      key_id: k.key_id,
+      label: k.label,
+      created_at: k.created_at,
+      last_used_at: k.last_used_at,
+      revoked_at: k.revoked_at
+    }))
+  });
+});
 
 app.post("/api/agents/register", async (c) => {
   if (!allowPublicRegistration(c.env)) {
@@ -315,6 +467,9 @@ app.post("/api/challenge", async (c) => {
     );
   }
 
+  const apiCtx = await getApiKeyContext(c);
+  const projectId = apiCtx?.project.project_id;
+
   const body = (await c.req.json().catch(() => null)) as null | { agent_name?: string; agent_version?: string };
   const agentName = body?.agent_name?.trim() || "unknown-agent";
   const agentVersion = body?.agent_version?.trim() || "0";
@@ -334,7 +489,8 @@ app.post("/api/challenge", async (c) => {
     steps: gen.steps,
     instructions: gen.instructions,
     agent_name: agentName,
-    agent_version: agentVersion
+    agent_version: agentVersion,
+    project_id: projectId
   };
 
   const store = getStore(c.env);
@@ -362,7 +518,7 @@ function constantTimeEqualHex(a: string, b: string) {
 
 app.post("/api/verify/:challengeId", async (c) => {
   const challengeId = c.req.param("challengeId");
-  const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
+  const store = getStore(c.env);
   const stored = (await store.getJson<StoredChallenge>(`challenge:${challengeId}`)) ?? null;
   if (!stored) return c.json({ error: "challenge_not_found_or_expired" }, 404);
   if (stored.expires_at) {
@@ -457,6 +613,8 @@ app.post("/api/benchmarks/report", async (c) => {
     );
   }
 
+  const apiCtx = await getApiKeyContext(c);
+  const projectId = apiCtx?.project.project_id;
   const body = (await c.req.json().catch(() => null)) as null | {
     model_id?: string;
     framework?: string;
@@ -520,6 +678,8 @@ app.post("/api/benchmarks/report", async (c) => {
       framework: String(body.framework),
       agent_name: (body.agent_name ?? "unknown-agent").trim() || "unknown-agent",
       agent_version: (body.agent_version ?? "0.0.0").trim() || "0.0.0",
+      // attach project_id only when available to keep backward compatibility
+      ...(projectId ? { project_id: projectId } : {}),
       runs: incomingRuns,
       successes: incomingSuccesses,
       success_runs: incomingSuccesses,

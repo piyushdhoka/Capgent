@@ -23,5 +23,6 @@ export type StoredChallenge = {
   instructions: string[];
   agent_name: string;
   agent_version: string;
+  project_id?: string;
 };
 
