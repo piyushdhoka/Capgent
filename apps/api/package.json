@@ -10,8 +10,9 @@
     "sample:verify": "bun run scripts/sample-bun.ts"
   },
   "dependencies": {
-    "@upstash/redis": "^1.35.3",
     "@capagent/sdk": "0.0.0",
+    "@neondatabase/serverless": "^1.0.2",
+    "@upstash/redis": "^1.35.3",
     "hono": "^4.9.1",
     "jose": "^6.1.0"
   },

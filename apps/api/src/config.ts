@@ -14,8 +14,7 @@ export type Env = {
   CAPAGENT_RATE_LIMIT_GUESTBOOK_SIGN_PER_MINUTE?: string;
   CAPAGENT_RATE_LIMIT_BENCHMARK_REPORT_PER_MINUTE?: string;
   CAPAGENT_GUESTBOOK_COOLDOWN_SECONDS?: string;
-  // Future: project/API key features
-  // (no additional env required for MVP)
+  DATABASE_URL: string;
 };
 
 function parsePositiveInt(raw: string | undefined, fallback: number): number {

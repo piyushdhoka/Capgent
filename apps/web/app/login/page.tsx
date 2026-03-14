@@ -1,45 +1,27 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { authClient } from "@/lib/auth-client"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { loginAction } from "./actions"
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function onSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setError(null)
     setLoading(true)
-    try {
-      const { error } = await authClient.signIn.email(
-        {
-          email,
-          password,
-          callbackURL: "/dashboard",
-          rememberMe: true,
-        },
-        {
-          onSuccess() {
-            router.push("/dashboard")
-          },
-        },
-      )
-      if (error) {
-        setError(error.message)
-      }
-    } catch (err: any) {
-      setError(err?.message ?? "Something went wrong")
-    } finally {
+    setError(null)
+    
+    const formData = new FormData(e.currentTarget)
+    const result = await loginAction(formData)
+    
+    if (result?.error) {
+      setError(result.error)
       setLoading(false)
     }
   }
@@ -54,27 +36,25 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 autoComplete="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 autoComplete="current-password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}

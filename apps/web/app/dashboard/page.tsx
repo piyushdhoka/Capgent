@@ -1,20 +1,16 @@
-import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { signoutAction } from "../login/actions"
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const user = await getSession()
 
-  if (!session?.user) {
+  if (!user) {
     redirect("/login")
   }
-
-  const user = session.user
 
   return (
     <div className="container max-w-screen-lg py-10">
@@ -25,7 +21,7 @@ export default async function DashboardPage() {
             Welcome back, {user.name ?? user.email}. Start by creating a project and copying an API key.
           </p>
         </div>
-        <form action="/api/auth/sign-out" method="post">
+        <form action={signoutAction}>
           <Button variant="outline" type="submit">
             Sign out
           </Button>

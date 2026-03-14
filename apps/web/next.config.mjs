@@ -6,9 +6,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ["@prisma/client"],
   turbopack: {
     root: resolve(__dirname, "../../"),
   },
 }
+
 
 export default nextConfig

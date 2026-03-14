@@ -1,6 +1,5 @@
 import type { Env } from "../config";
-import { canUseRedis, createRedis } from "../storage/redis";
-import { createInMemoryStore, createRedisStore, type Store } from "../storage/store";
+import { createDb } from "../storage/db";
 
 export type ProjectStatus = "active" | "disabled";
 
@@ -22,76 +21,102 @@ export type ApiKeyRecord = {
   revoked_at?: string | null;
 };
 
-type StoreShape = Store;
-
-function getStore(env: Env): StoreShape {
-  return !env.CAPAGENT_FORCE_INMEMORY && canUseRedis(env)
-    ? createRedisStore(createRedis(env))
-    : createInMemoryStore();
-}
-
-const PROJECT_KEY_PREFIX = "project:";
-const PROJECT_KEYS_KEY_SUFFIX = ":keys";
-const APIKEY_INDEX_PREFIX = "apikey:";
-
-function projectKey(id: string) {
-  return `${PROJECT_KEY_PREFIX}${id}`;
-}
-
-function projectKeysKey(id: string) {
-  return `${PROJECT_KEY_PREFIX}${id}${PROJECT_KEYS_KEY_SUFFIX}`;
-}
-
-function apiKeyIndexKey(hash: string) {
-  return `${APIKEY_INDEX_PREFIX}${hash}`;
-}
-
 export async function saveProject(env: Env, project: Project): Promise<void> {
-  const store = getStore(env);
-  await store.setJson(projectKey(project.project_id), project, 60 * 60 * 24 * 365);
+  const sql = createDb(env);
+  await sql`
+    INSERT INTO "Project" (id, name, status, "ownerEmail")
+    VALUES (${project.project_id}, ${project.name}, ${project.status}, ${project.owner_email})
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      status = EXCLUDED.status,
+      "ownerEmail" = EXCLUDED."ownerEmail"
+  `;
 }
 
 export async function getProjectById(env: Env, projectId: string): Promise<Project | null> {
-  const store = getStore(env);
-  return (await store.getJson<Project>(projectKey(projectId))) ?? null;
+  const sql = createDb(env);
+  const rows = await sql`
+    SELECT id as project_id, name, status, "ownerEmail" as owner_email, "createdAt" as created_at
+    FROM "Project"
+    WHERE id = ${projectId}
+    LIMIT 1
+  `;
+  
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  return {
+    ...row,
+    created_at: row.created_at.toISOString(),
+    status: row.status as ProjectStatus
+  } as Project;
 }
 
 export async function saveApiKey(env: Env, apiKey: ApiKeyRecord): Promise<void> {
-  const store = getStore(env);
-  const keys = (await store.getJson<ApiKeyRecord[]>(projectKeysKey(apiKey.project_id))) ?? [];
-  const filtered = keys.filter((k) => k.key_id !== apiKey.key_id);
-  const next = [apiKey, ...filtered];
-  await store.setJson(projectKeysKey(apiKey.project_id), next, 60 * 60 * 24 * 365);
-
-  await store.setJson(
-    apiKeyIndexKey(apiKey.key_hash),
-    { project_id: apiKey.project_id, key_id: apiKey.key_id },
-    60 * 60 * 24 * 365
-  );
+  const sql = createDb(env);
+  await sql`
+    INSERT INTO "ApiKey" (id, "projectId", "keyHash", label, "revokedAt")
+    VALUES (${apiKey.key_id}, ${apiKey.project_id}, ${apiKey.key_hash}, ${apiKey.label}, ${apiKey.revoked_at ? new Date(apiKey.revoked_at) : null})
+    ON CONFLICT (id) DO UPDATE SET
+      label = EXCLUDED.label,
+      "revokedAt" = EXCLUDED."revokedAt"
+  `;
 }
 
 export async function listApiKeysForProject(env: Env, projectId: string): Promise<ApiKeyRecord[]> {
-  const store = getStore(env);
-  return (await store.getJson<ApiKeyRecord[]>(projectKeysKey(projectId))) ?? [];
+  const sql = createDb(env);
+  const rows = await sql`
+    SELECT id as key_id, "projectId" as project_id, "keyHash" as key_hash, label, 
+           "createdAt" as created_at, "lastUsedAt" as last_used_at, "revokedAt" as revoked_at
+    FROM "ApiKey"
+    WHERE "projectId" = ${projectId}
+  `;
+  
+  return rows.map(row => ({
+    ...row,
+    created_at: row.created_at.toISOString(),
+    last_used_at: row.last_used_at?.toISOString() || null,
+    revoked_at: row.revoked_at?.toISOString() || null
+  })) as ApiKeyRecord[];
 }
 
 export async function getProjectForApiKeyHash(
   env: Env,
   keyHash: string
 ): Promise<{ project: Project; apiKey: ApiKeyRecord } | null> {
-  const store = getStore(env);
-  const index = (await store.getJson<{ project_id: string; key_id: string }>(
-    apiKeyIndexKey(keyHash)
-  )) ?? null;
-  if (!index) return null;
+  const sql = createDb(env);
+  const rows = await sql`
+    SELECT 
+      p.id as p_id, p.name as p_name, p.status as p_status, p."ownerEmail" as p_owner_email, p."createdAt" as p_created_at,
+      k.id as k_id, k."projectId" as k_project_id, k."keyHash" as k_key_hash, k.label as k_label, 
+      k."createdAt" as k_created_at, k."lastUsedAt" as k_last_used_at, k."revokedAt" as k_revoked_at
+    FROM "ApiKey" k
+    JOIN "Project" p ON k."projectId" = p.id
+    WHERE k."keyHash" = ${keyHash} AND k."revokedAt" IS NULL
+    LIMIT 1
+  `;
 
-  const project = await getProjectById(env, index.project_id);
-  if (!project) return null;
+  if (rows.length === 0) return null;
+  const row = rows[0];
 
-  const keys = (await store.getJson<ApiKeyRecord[]>(projectKeysKey(index.project_id))) ?? [];
-  const apiKey = keys.find((k) => k.key_id === index.key_id) ?? null;
-  if (!apiKey || apiKey.revoked_at) return null;
+  const project: Project = {
+    project_id: row.p_id,
+    name: row.p_name,
+    status: row.p_status as ProjectStatus,
+    owner_email: row.p_owner_email,
+    created_at: row.p_created_at.toISOString()
+  };
+
+  const apiKey: ApiKeyRecord = {
+    key_id: row.k_id,
+    project_id: row.k_project_id,
+    key_hash: row.k_key_hash,
+    label: row.k_label,
+    created_at: row.k_created_at.toISOString(),
+    last_used_at: row.k_last_used_at?.toISOString() || null,
+    revoked_at: row.k_revoked_at?.toISOString() || null
+  };
 
   return { project, apiKey };
 }
+
 
