@@ -12,7 +12,7 @@ npm install @capagent/sdk
 
 ```ts
 import { createClient } from "@capagent/sdk";
-import { parseStepsWithOpenRouter } from "@capagent/sdk/parser/llm-openrouter";
+import { parseSteps } from "@capagent/sdk/parser/heuristic";
 import { solveChallengeFromSteps } from "@capagent/sdk/solver";
 
 const client = createClient({
@@ -25,8 +25,8 @@ const client = createClient({
 // 1) Fetch a challenge
 const ch = await client.getChallenge();
 
-// 2) Use an LLM (via OpenRouter) to parse instructions
-const steps = await parseStepsWithOpenRouter(ch.instructions ?? []);
+// 2) Parse instructions → structured steps (no LLM required)
+const steps = parseSteps(ch.instructions);
 
 // 3) Compute answer + hmac
 const { answer, hmac } = await solveChallengeFromSteps({
@@ -42,7 +42,7 @@ const proof = await client.verifyChallenge(ch.challenge_id, answer, hmac);
 const reg = await client.registerAgent({
   agent_name: "my-agent",
   framework: "node-sdk",
-  model: process.env.OPENROUTER_MODEL ?? "x-ai/grok-4-fast",
+  model: "openrouter/gpt-4.1",
   owner_org: "My Team"
 });
 

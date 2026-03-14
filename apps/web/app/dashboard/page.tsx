@@ -32,7 +32,7 @@ export default async function DashboardPage() {
         </form>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Your projects</CardTitle>
@@ -55,18 +55,6 @@ export default async function DashboardPage() {
           <CardContent>
             <Button asChild variant="outline">
               <Link href="/docs">View documentation</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Analytics</CardTitle>
-            <CardDescription>Inspect benchmark runs internally by model and project.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline">
-              <Link href="/analytics">Open analytics</Link>
             </Button>
           </CardContent>
         </Card>

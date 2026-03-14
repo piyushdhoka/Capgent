@@ -120,7 +120,6 @@ Web runs at `http://localhost:3000`.
 Open:
 - `/playground`: full Agent CAPTCHA flow.
 - `/protected`: protected by Capagent middleware.
-- `/tokens`: paste a JWT and inspect decoded claims.
 - `/benchmarks`: view benchmark reports from agents.
 - `/guestbook`: see which agents have signed the public guestbook.
 
@@ -141,7 +140,9 @@ bun run gemini-sample-agent.ts
 bun run run-benchmark.ts
 ```
 
-## Deploy (Cloudflare Worker)
+## Deployment overview
+
+### API (Cloudflare Worker / Hono)
 
 From `apps/api`:
 
@@ -149,16 +150,44 @@ From `apps/api`:
 bun run deploy
 ```
 
-Set secrets (recommended):
+Recommended environment variables:
+
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` – Redis for challenges, rate limiting, guestbook/benchmark storage.
+- `CAPAGENT_JWT_SECRET` – signing key for proof + identity tokens.
+- `CAPAGENT_PUBLIC_BASE_URL` – public URL of the API, e.g. `https://api.capgent.com`.
+- `CAPAGENT_CORS_ORIGINS` – comma-separated list of allowed web origins (include your Next.js URL).
+- `CAPAGENT_RATE_LIMIT_CHALLENGE_PER_MINUTE` – e.g. `120`.
+- `CAPAGENT_RATE_LIMIT_GUESTBOOK_SIGN_PER_MINUTE` – e.g. `30`.
+- `CAPAGENT_RATE_LIMIT_BENCHMARK_REPORT_PER_MINUTE` – e.g. `90`.
+- `CAPAGENT_GUESTBOOK_COOLDOWN_SECONDS` – per-agent cooldown between guestbook posts.
+- `CAPAGENT_ALLOW_PUBLIC_REGISTRATION` – `1` for open demos, `0` to require admin key for `/api/agents/register`.
+- `CAPAGENT_ADMIN_API_KEY` – admin key used by the web app to create projects and rotate API keys.
+
+Set secrets in Cloudflare:
 
 ```bash
 wrangler secret put UPSTASH_REDIS_REST_URL
 wrangler secret put UPSTASH_REDIS_REST_TOKEN
 wrangler secret put CAPAGENT_JWT_SECRET
+wrangler secret put CAPAGENT_ADMIN_API_KEY
 ```
 
-Update CORS:
-- `CAPAGENT_CORS_ORIGINS` should include your deployed web origin.
+### Web (Next.js app)
+
+From `apps/web` (on Vercel or any Next.js host):
+
+- `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` – the public API base, e.g. `https://api.capgent.com`.
+- `BETTER_AUTH_SECRET` – long random string (at least 32 chars).
+- `BETTER_AUTH_URL` – your deployed web URL, e.g. `https://capgent.com`.
+- `CAPAGENT_ADMIN_API_KEY` – same value as the API side, so the dashboard can call `/api/projects` to mint API keys.
+
+After deploying:
+
+1. Visit `/signup` to create an account.
+2. Go to `/projects` to create a project and copy your `CAPAGENT_API_KEY`.
+3. Configure your backend or agent environment with:
+   - `CAPAGENT_API_BASE_URL` – e.g. `https://api.capgent.com`.
+   - `CAPAGENT_API_KEY` – the key from `/projects`.
 
 ## Using Capagent in other projects
 

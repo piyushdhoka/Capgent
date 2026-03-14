@@ -102,7 +102,7 @@ console.log("Proof JWT:", proof.token)
 const reg = await client.registerAgent({
   agent_name: "my-agent",
   framework: "custom",
-  model: "x-ai/grok-4-fast",
+  model: "openrouter/gpt-4.1",
   owner_org: "My Team",
 })
 
@@ -209,6 +209,17 @@ export default function DocsPage() {
 
           {/* SDK tab */}
           <TabsContent value="sdk" className="mt-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Getting started</CardTitle>
+                <CardDescription className="mt-1">
+                  1) Sign up and log in. 2) Create a project on <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/projects</code> to get an API key. 3) Set{" "}
+                  <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">CAPAGENT_API_BASE_URL</code> and{" "}
+                  <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">CAPAGENT_API_KEY</code> in your backend.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
                 <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -255,8 +266,7 @@ export default function DocsPage() {
                 {[
                   { path: "@capagent/sdk", desc: "createClient, CapagentError, withCapagentProof, decodeJwtClaims" },
                   { path: "@capagent/sdk/solver", desc: "solveChallengeFromSteps — runs byte transforms and computes SHA-256 + HMAC" },
-                  { path: "@capagent/sdk/parser/heuristic", desc: "parseSteps — regex-based NL instruction parser (no LLM needed)" },
-                  { path: "@capagent/sdk/parser/llm-openrouter", desc: "parseStepsWithOpenRouter — sends instructions to an LLM for parsing" },
+                  { path: "@capagent/sdk/parser/heuristic", desc: "parseSteps — regex-based instruction parser (no LLM needed for most cases)" },
                 ].map((e) => (
                   <div key={e.path} className="flex flex-col gap-0.5 rounded-lg border p-3">
                     <code className="font-mono text-xs text-emerald-400">{e.path}</code>
@@ -430,6 +440,63 @@ export default function DocsPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">Test quickly with Postman or curl</CardTitle>
+                    <CardDescription className="mt-1">
+                      Use your project API key as <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">X-Capgent-Api-Key</code>.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      copyText(
+                        `curl -X POST $CAPAGENT_API_BASE_URL/api/benchmarks/report \\
+  -H "Content-Type: application/json" \\
+  -H "X-Capgent-Api-Key: $CAPAGENT_API_KEY" \\
+  -d '{
+    "model_id": "openrouter/gpt-4.1",
+    "framework": "postman",
+    "agent_name": "postman-tester",
+    "agent_version": "1.0.0",
+    "runs": 1,
+    "successes": 1,
+    "avg_ms": 1234,
+    "p95_ms": 1234
+  }'`,
+                        "postman",
+                      )
+                    }
+                  >
+                    {copied === "postman" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg bg-neutral-950 p-4">
+                  <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-neutral-200">
+{`# Example: report a single benchmark run
+curl -X POST $CAPAGENT_API_BASE_URL/api/benchmarks/report \\
+  -H "Content-Type: application/json" \\
+  -H "X-Capgent-Api-Key: $CAPAGENT_API_KEY" \\
+  -d '{
+    "model_id": "openrouter/gpt-4.1",
+    "framework": "postman",
+    "agent_name": "postman-tester",
+    "agent_version": "1.0.0",
+    "runs": 1,
+    "successes": 1,
+    "avg_ms": 1234,
+    "p95_ms": 1234
+  }'`}
+                  </pre>
                 </div>
               </CardContent>
             </Card>
