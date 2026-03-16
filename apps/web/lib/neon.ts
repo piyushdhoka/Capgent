@@ -8,7 +8,7 @@ if (!url) {
 
 /**
  * Direct Neon HTTP client.
- * Bypasses WebSocket and Prisma binary protocol for maximum stability.
+ * Direct Neon HTTP client for maximum stability.
  */
 export const sql = neon(url);
 
