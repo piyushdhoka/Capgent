@@ -1,6 +1,5 @@
 import type { Env } from "../config";
-import { canUseRedis, createRedis } from "../storage/redis";
-import { createInMemoryStore, createRedisStore, type Store } from "../storage/store";
+import { createDb } from "../storage/db";
 
 export type AgentRecord = {
   agent_id: string;
@@ -16,20 +15,51 @@ export type AgentRecord = {
   secret_hash: string;
 };
 
-const AGENT_TTL_SECONDS = 60 * 60 * 24 * 365 * 5; // 5 years
-
-function getStore(env: Env): Store {
-  return !env.CAPAGENT_FORCE_INMEMORY && canUseRedis(env) ? createRedisStore(createRedis(env)) : createInMemoryStore();
-}
-
 export async function getAgentById(env: Env, agentId: string): Promise<AgentRecord | null> {
-  const store = getStore(env);
-  return (await store.getJson<AgentRecord>(`agent:${agentId}`)) ?? null;
+  const sql = createDb(env);
+  const rows = await sql`
+    SELECT id as agent_id, name as agent_name, framework, model, "ownerOrg" as owner_org, 
+           "createdAt" as created_at, "capabilityScore" as capability_score, 
+           "safetyScore" as safety_score, "lastVerified" as last_verified, 
+           "revokedAt" as revoked_at, "secretHash" as secret_hash
+    FROM "AgentIdentity"
+    WHERE id = ${agentId}
+    LIMIT 1
+  `;
+  
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  return {
+    ...row,
+    created_at: row.created_at.toISOString(),
+    last_verified: row.last_verified?.toISOString() || null,
+    revoked_at: row.revoked_at?.toISOString() || null
+  } as AgentRecord;
 }
 
 export async function saveAgent(env: Env, agent: AgentRecord): Promise<void> {
-  const store = getStore(env);
-  await store.setJson(`agent:${agent.agent_id}`, agent, AGENT_TTL_SECONDS);
+  const sql = createDb(env);
+  await sql`
+    INSERT INTO "AgentIdentity" (
+      id, name, framework, model, "ownerOrg", 
+      "capabilityScore", "safetyScore", "lastVerified", "revokedAt", "secretHash"
+    )
+    VALUES (
+      ${agent.agent_id}, ${agent.agent_name}, ${agent.framework}, ${agent.model}, ${agent.owner_org}, 
+      ${agent.capability_score}, ${agent.safety_score}, ${agent.last_verified ? new Date(agent.last_verified) : null}, 
+      ${agent.revoked_at ? new Date(agent.revoked_at) : null}, ${agent.secret_hash}
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      framework = EXCLUDED.framework,
+      model = EXCLUDED.model,
+      "ownerOrg" = EXCLUDED."ownerOrg",
+      "capabilityScore" = EXCLUDED."capabilityScore",
+      "safetyScore" = EXCLUDED."safetyScore",
+      "lastVerified" = EXCLUDED."lastVerified",
+      "revokedAt" = EXCLUDED."revokedAt",
+      "secretHash" = EXCLUDED."secretHash"
+  `;
 }
 
 export async function revokeAgent(env: Env, agentId: string): Promise<AgentRecord | null> {
@@ -40,4 +70,5 @@ export async function revokeAgent(env: Env, agentId: string): Promise<AgentRecor
   await saveAgent(env, updated);
   return updated;
 }
+
 
