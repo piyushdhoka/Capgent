@@ -177,8 +177,8 @@ wrangler secret put CAPAGENT_ADMIN_API_KEY
 From `apps/web` (on Vercel or any Next.js host):
 
 - `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` – the public API base, e.g. `https://api.capgent.com`.
-- `BETTER_AUTH_SECRET` – long random string (at least 32 chars).
-- `BETTER_AUTH_URL` – your deployed web URL, e.g. `https://capgent.com`.
+- `SESSION_SECRET` – long random string (at least 32 chars) for signing session JWTs.
+
 - `CAPAGENT_ADMIN_API_KEY` – same value as the API side, so the dashboard can call `/api/projects` to mint API keys.
 
 After deploying:

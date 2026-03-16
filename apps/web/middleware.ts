@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.BETTER_AUTH_SECRET || "default_secret_keep_it_safe"
-);
+if (!process.env.SESSION_SECRET) {
+  throw new Error("❌ [Middleware] SESSION_SECRET is not set. Please add it to your .env file.");
+}
+
+const JWT_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET);
+
 
 const PROTECTED_PREFIXES = ["/protected", "/dashboard"];
 

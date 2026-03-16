@@ -8,6 +8,11 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
+import { getSession } from "@/lib/auth"
+import { getUserProjects } from "@/lib/projects"
+import { ProjectSwitcher } from "@/components/ProjectSwitcher"
+import { UserNav } from "@/components/UserNav"
+
 const fontSans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -28,7 +33,10 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const user = await getSession()
+  const projects = user ? await getUserProjects(user.email) : []
+
   return (
     <html lang="en" className={cn("dark", fontSans.variable, fontSerif.variable)}>
       <body className="min-h-screen bg-background font-sans antialiased">
@@ -36,7 +44,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {/* Header */}
           <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 max-w-screen-xl items-center justify-between">
-              <div className="flex items-center gap-8">
+              <div className="flex items-center gap-4">
                 <Link href="/" className="flex items-center gap-2.5">
                   <Image
                     src="/logo.png"
@@ -48,7 +56,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   />
                   <span className="text-lg font-bold tracking-tight">Capgent</span>
                 </Link>
-                <nav className="hidden items-center gap-6 text-sm md:flex">
+
+                {user && (
+                  <ProjectSwitcher projects={projects} />
+                )}
+
+                <nav className="hidden items-center gap-6 text-sm md:flex ml-4">
                   <Link href="/docs" className="text-muted-foreground transition-colors hover:text-foreground">
                     Docs
                   </Link>
@@ -64,14 +77,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </nav>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href="/login">Sign in</Link>
-                  </Button>
-                  <Button asChild size="sm">
-                    <Link href="/playground">Try Demo</Link>
-                  </Button>
-                </div>
+                {user ? (
+                  <UserNav user={user} />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href="/login">Sign in</Link>
+                    </Button>
+                    <Button asChild size="sm">
+                      <Link href="/playground">Try Demo</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </header>

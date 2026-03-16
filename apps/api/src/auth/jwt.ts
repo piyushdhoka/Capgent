@@ -21,6 +21,9 @@ export type AgentIdentityClaims = {
 };
 
 function getKey(env: Env) {
+  if (!env.CAPAGENT_JWT_SECRET) {
+    throw new Error("❌ [Auth] CAPAGENT_JWT_SECRET is not set in environment.");
+  }
   return new TextEncoder().encode(env.CAPAGENT_JWT_SECRET);
 }
 

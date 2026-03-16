@@ -1,9 +1,11 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import Link from "next/link"
 import { createProjectAction } from "./actions"
 
 type CreateProjectState = {
@@ -19,6 +21,13 @@ const initialState: CreateProjectState = {
 
 export function ProjectsForm() {
   const [state, formAction] = useActionState(createProjectAction, initialState)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (state.status === "success" && state.projectId) {
+      router.push(`/projects?project_id=${state.projectId}`)
+    }
+  }, [state, router])
 
   return (
     <div className="space-y-4">
@@ -40,6 +49,13 @@ export function ProjectsForm() {
           </p>
           <div className="mt-1.5 overflow-x-auto rounded bg-neutral-950 px-2 py-1.5 font-mono text-[11px] text-neutral-100">
             {state.apiKey}
+          </div>
+          <div className="mt-4">
+            <Button asChild size="sm" className="w-full">
+              <Link href={`/projects?project_id=${state.projectId}`}>
+                Go to project dashboard
+              </Link>
+            </Button>
           </div>
         </div>
       )}

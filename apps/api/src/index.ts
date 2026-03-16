@@ -23,7 +23,7 @@ import { AgentIdentityClaims, signIdentityJwt, signProofJwt, verifyIdentityJwt, 
 import type { AgentRecord } from "./identity/store";
 import { getAgentById, revokeAgent, saveAgent } from "./identity/store";
 import type { ApiKeyRecord, Project } from "./projects/store";
-import { getProjectById, getProjectForApiKeyHash, listApiKeysForProject, saveApiKey, saveProject } from "./projects/store";
+import { deleteApiKey, getProjectById, getProjectForApiKeyHash, listApiKeysForProject, saveApiKey, saveProject } from "./projects/store";
 import type { GuestbookEntry } from "./guestbook/store";
 import { addGuestbookEntry, getGuestbookEntries, clearGuestbook } from "./guestbook/store";
 
@@ -59,13 +59,14 @@ type AgentTokenRequest = {
 
 type ProjectCreateRequest = {
   name?: string;
-  owner_email?: string;
+  owner_id?: string;
   label?: string;
 };
 
 type ProjectKeyCreateRequest = {
   project_id?: string;
   label?: string;
+  expires_at?: string;
 };
 
 async function sha256HexOfString(input: string) {
@@ -214,35 +215,19 @@ app.post("/api/projects", async (c) => {
     project_id: projectId,
     name,
     created_at: now,
-    owner_email: body?.owner_email?.trim() || null,
-    status: "active"
+    owner_id: body?.owner_id?.trim() || null
   };
 
   const keyId = crypto.randomUUID();
-  const rawKey = `capg_sk_${crypto.randomUUID().replace(/-/g, "")}`;
-  const keyHash = await hashApiKeySecret(rawKey);
-  const apiKey: ApiKeyRecord = {
-    key_id: keyId,
-    project_id: projectId,
-    key_hash: keyHash,
-    label: body?.label?.trim() || null,
-    created_at: now,
-    last_used_at: null,
-    revoked_at: null
-  };
-
   await saveProject(c.env, project);
-  await saveApiKey(c.env, apiKey);
 
   return c.json({
     project: {
       project_id: project.project_id,
       name: project.name,
       created_at: project.created_at,
-      owner_email: project.owner_email,
-      status: project.status
-    },
-    api_key: rawKey
+      owner_id: project.owner_id
+    }
   });
 });
 
@@ -270,8 +255,7 @@ app.post("/api/projects/keys", async (c) => {
     key_hash: keyHash,
     label: body?.label?.trim() || null,
     created_at: now,
-    last_used_at: null,
-    revoked_at: null
+    expires_at: body?.expires_at || null
   };
 
   await saveApiKey(c.env, apiKey);
@@ -301,10 +285,22 @@ app.get("/api/projects/:projectId", async (c) => {
       key_id: k.key_id,
       label: k.label,
       created_at: k.created_at,
-      last_used_at: k.last_used_at,
-      revoked_at: k.revoked_at
+      expires_at: k.expires_at
     }))
   });
+});
+
+app.delete("/api/projects/keys/:keyId", async (c) => {
+  const adminKey = getAdminApiKey(c.env);
+  const header = c.req.header("x-capagent-admin-key") ?? "";
+  if (!adminKey || header !== adminKey) {
+    return c.json({ error: "admin_key_required" }, 401);
+  }
+
+  const keyId = c.req.param("keyId");
+  await deleteApiKey(c.env, keyId);
+
+  return c.json({ ok: true });
 });
 
 app.post("/api/agents/register", async (c) => {

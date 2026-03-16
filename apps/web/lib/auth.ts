@@ -1,10 +1,14 @@
 import { cookies } from "next/headers";
 import { sql } from "./neon";
 import { SignJWT, jwtVerify } from "jose";
+import bcrypt from "bcryptjs";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.BETTER_AUTH_SECRET || "default_secret_keep_it_safe"
-);
+if (!process.env.SESSION_SECRET) {
+  throw new Error("❌ [Auth] SESSION_SECRET is not set. Please add it to your .env file.");
+}
+
+const JWT_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET);
+
 
 /**
  * Manual Authentication & Session System
@@ -66,14 +70,14 @@ export async function getSession() {
   }
 }
 
-/**
- * Simple password hashing (for demonstration/stabilization)
- * In a production app, use bcrypt or argon2.
- */
-function hashPassword(password: string) {
-  // Simple deterministic "hash" for now to ensure we can match
-  // We will replace this with a proper hash once we confirm stability
-  return Buffer.from(password).toString("base64");
+const BCRYPT_SALT_ROUNDS = 12;
+
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }
 
 export async function signIn(email: string, password: string) {
@@ -91,7 +95,8 @@ export async function signIn(email: string, password: string) {
     if (!user) throw new Error("Invalid email or password");
 
     // 2. Verify password
-    if (user.password !== hashPassword(password)) {
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) {
       throw new Error("Invalid email or password");
     }
 
@@ -119,7 +124,7 @@ export async function signUp(name: string, email: string, password: string) {
     const accountId = crypto.randomUUID();
     await sql`
       INSERT INTO "account" (id, "userId", "accountId", "providerId", password, "createdAt", "updatedAt")
-      VALUES (${accountId}, ${userId}, ${userId}, 'credential', ${hashPassword(password)}, ${now}, ${now})
+      VALUES (${accountId}, ${userId}, ${userId}, 'credential', ${await hashPassword(password)}, ${now}, ${now})
     `;
 
     // 3. Create session
