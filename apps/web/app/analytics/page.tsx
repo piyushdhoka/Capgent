@@ -1,6 +1,6 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -24,11 +24,9 @@ type AnalyticsPageProps = {
 }
 
 export default async function AnalyticsPage(props: AnalyticsPageProps) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const user = await getSession()
 
-  if (!session?.user) {
+  if (!user) {
     redirect("/login")
   }
 
