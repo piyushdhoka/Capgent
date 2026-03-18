@@ -117,7 +117,22 @@ export function SiteFooter() {
         {/* Top bar */}
         <div className="flex flex-col gap-6 border-b border-border/40 pb-10 md:flex-row md:items-center md:justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt="Capgent logo" width={28} height={28} className="h-7 w-7 object-contain" />
+            <span className="relative block h-8 w-8">
+              <Image
+                src="/logo_white.png"
+                alt="Capgent logo"
+                width={32}
+                height={32}
+                className="absolute inset-0 hidden dark:block h-8 w-8 object-contain"
+              />
+              <Image
+                src="/logo_dark.png"
+                alt="Capgent logo"
+                width={32}
+                height={32}
+                className="absolute inset-0 block dark:hidden h-8 w-8 object-contain"
+              />
+            </span>
             <span className="font-heading text-base font-bold tracking-tight">Capgent</span>
           </Link>
 

@@ -68,14 +68,24 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 {/* Left: logo + nav */}
                 <div className="flex items-center gap-6">
                   <Link href="/" className="flex items-center gap-2.5">
-                    <Image
-                      src="/logo.png"
-                      alt="Capgent logo"
-                      width={36}
-                      height={36}
-                      className="h-9 w-9 object-contain"
-                      priority
-                    />
+                    <span className="relative block h-8 w-8">
+                      <Image
+                        src="/logo_white.png"
+                        alt="Capgent logo"
+                        width={40}
+                        height={40}
+                        className="absolute inset-0 hidden dark:block h-10 w-10 object-contain"
+                        priority
+                      />
+                      <Image
+                        src="/logo_dark.png"
+                        alt="Capgent logo"
+                        width={40}
+                        height={40}
+                        className="absolute inset-0 block dark:hidden h-10 w-10 object-contain"
+                        priority
+                      />
+                    </span>
                     <span className="font-heading text-lg font-bold tracking-tight">Capgent</span>
                   </Link>
 
