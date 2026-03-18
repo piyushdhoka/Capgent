@@ -72,6 +72,19 @@ export async function saveApiKey(env: Env, apiKey: ApiKeyRecord): Promise<void> 
   `;
 }
 
+export async function deleteProject(env: Env, projectId: string): Promise<void> {
+  const sql = createDb(env);
+  // Ensure API keys are removed first (no reliance on FK cascade).
+  await sql`
+    DELETE FROM api_key
+    WHERE "projectId" = ${projectId}
+  `;
+  await sql`
+    DELETE FROM project
+    WHERE id = ${projectId}
+  `;
+}
+
 export async function deleteApiKey(env: Env, keyId: string): Promise<void> {
   const sql = createDb(env);
   await sql`

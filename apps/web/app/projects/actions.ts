@@ -1,6 +1,6 @@
 "use server"
 
-import { headers } from "next/headers"
+import { cookies } from "next/headers"
 import { getSession } from "@/lib/auth"
 
 type CreateProjectState = {
@@ -26,11 +26,13 @@ export async function createProjectAction(
   }
 
   const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787"
+  const sessionCookie = (await cookies()).get("session")?.value ?? ""
 
   const res = await fetch(`${apiBase}/api/me/projects`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      ...(sessionCookie ? { cookie: `session=${sessionCookie}` } : {}),
     },
     body: JSON.stringify({
       name,
@@ -60,6 +62,7 @@ export async function createKeyAction(
   const user = await getSession()
   if (!user?.id) return { status: "error", message: "Unauthorized" }
   const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787"
+  const sessionCookie = (await cookies()).get("session")?.value ?? ""
 
   let expiresAt: string | null = null
   if (expiresInDays) {
@@ -72,6 +75,7 @@ export async function createKeyAction(
     method: "POST",
     headers: {
       "content-type": "application/json",
+      ...(sessionCookie ? { cookie: `session=${sessionCookie}` } : {}),
     },
     body: JSON.stringify({
       label: name,
@@ -96,15 +100,34 @@ export async function deleteKeyAction(
   const user = await getSession()
   if (!user?.id) return { success: false, message: "Unauthorized" }
   const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787"
+  const sessionCookie = (await cookies()).get("session")?.value ?? ""
 
   const res = await fetch(
     `${apiBase}/api/me/projects/${encodeURIComponent(projectId)}/keys/${encodeURIComponent(keyId)}`,
     {
     method: "DELETE",
+    headers: sessionCookie ? { cookie: `session=${sessionCookie}` } : {},
     }
   )
 
   if (!res.ok) return { success: false, message: "Failed to delete API key" }
 
+  return { success: true }
+}
+
+export async function deleteProjectAction(
+  projectId: string,
+): Promise<{ success: boolean; message?: string }> {
+  const user = await getSession()
+  if (!user?.id) return { success: false, message: "Unauthorized" }
+  const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787"
+  const sessionCookie = (await cookies()).get("session")?.value ?? ""
+
+  const res = await fetch(`${apiBase}/api/me/projects/${encodeURIComponent(projectId)}`, {
+    method: "DELETE",
+    headers: sessionCookie ? { cookie: `session=${sessionCookie}` } : {},
+  })
+
+  if (!res.ok) return { success: false, message: "Failed to delete project" }
   return { success: true }
 }

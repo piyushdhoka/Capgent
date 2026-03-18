@@ -24,7 +24,7 @@ import { verifyWebSessionFromCookie } from "./auth/web-session";
 import type { AgentRecord } from "./identity/store";
 import { getAgentById, revokeAgent, saveAgent } from "./identity/store";
 import type { ApiKeyRecord, Project } from "./projects/store";
-import { deleteApiKey, getApiKeyById, getProjectById, getProjectForApiKeyHash, listApiKeysForProject, listProjectsForOwner, saveApiKey, saveProject } from "./projects/store";
+import { deleteApiKey, deleteProject, getApiKeyById, getProjectById, getProjectForApiKeyHash, listApiKeysForProject, listProjectsForOwner, saveApiKey, saveProject } from "./projects/store";
 import type { GuestbookEntry } from "./guestbook/store";
 import { addGuestbookEntry, getGuestbookEntries, clearGuestbook } from "./guestbook/store";
 
@@ -232,6 +232,19 @@ app.post("/api/me/projects", async (c) => {
 
   await saveProject(c.env, project);
   return c.json({ project: { project_id: project.project_id, name: project.name, created_at: project.created_at } });
+});
+
+app.delete("/api/me/projects/:projectId", async (c) => {
+  const user = await requireWebUser(c);
+  if (!user) return c.json({ error: "unauthorized" }, 401);
+
+  const projectId = c.req.param("projectId");
+  const project = await getProjectById(c.env, projectId);
+  if (!project) return c.json({ error: "project_not_found" }, 404);
+  if (project.owner_id !== user.userId) return c.json({ error: "forbidden" }, 403);
+
+  await deleteProject(c.env, projectId);
+  return c.json({ ok: true });
 });
 
 app.get("/api/me/projects/:projectId/keys", async (c) => {

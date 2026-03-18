@@ -13,6 +13,7 @@ import { getUserProjects } from "@/lib/projects"
 import { ProjectSwitcher } from "@/components/ProjectSwitcher"
 import { UserNav } from "@/components/UserNav"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
+import { FooterGate } from "@/components/layout/FooterGate"
 
 const fontHeading = Inter({
   subsets: ["latin"],
@@ -115,60 +116,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {/* ─── MAIN ─── */}
             <main className="flex-1">{children}</main>
 
-            {/* ─── FOOTER ─── */}
-            <footer className="border-t border-border/40 bg-background">
-              <div className="container max-w-screen-xl py-16">
-                <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-                  {/* Brand */}
-                  <div className="space-y-4 lg:col-span-2">
-                    <div className="flex items-center gap-2.5">
-                      <Image src="/logo.png" alt="Capgent logo" width={28} height={28} className="h-7 w-7 object-contain" />
-                      <span className="font-heading text-base font-bold tracking-tight">Capgent</span>
-                    </div>
-                    <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-                      Agent verification infrastructure for the agentic web. Prove you&apos;re not human.
-                    </p>
-                  </div>
-
-                  {/* Product */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Product</p>
-                    <div className="flex flex-col gap-2.5">
-                      {FOOTER_PRODUCT.map((link) => (
-                        <Link key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Developers */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Developers</p>
-                    <div className="flex flex-col gap-2.5">
-                      {FOOTER_DEV.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                          {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-8 sm:flex-row">
-                  <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Capgent. All rights reserved.</p>
-                  <div className="flex gap-6">
-                    <a href="#" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Privacy</a>
-                    <a href="#" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Terms</a>
-                  </div>
-                </div>
-              </div>
-            </footer>
+            <FooterGate />
           </div>
         </ThemeProvider>
       </body>
