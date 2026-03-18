@@ -25,22 +25,15 @@ export async function createProjectAction(
     return { status: "error", message: "You must be signed in." }
   }
 
-  const adminKey = process.env.CAPAGENT_ADMIN_API_KEY
-  if (!adminKey) {
-    return { status: "error", message: "CAPAGENT_ADMIN_API_KEY is not set on the web app." }
-  }
-
   const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787"
 
-  const res = await fetch(`${apiBase}/api/projects`, {
+  const res = await fetch(`${apiBase}/api/me/projects`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-capagent-admin-key": adminKey,
     },
     body: JSON.stringify({
       name,
-      owner_id: user.id,
     }),
   })
 
@@ -66,8 +59,6 @@ export async function createKeyAction(
 ): Promise<{ status: "success" | "error"; apiKey?: string; message?: string }> {
   const user = await getSession()
   if (!user?.id) return { status: "error", message: "Unauthorized" }
-
-  const adminKey = process.env.CAPAGENT_ADMIN_API_KEY
   const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787"
 
   let expiresAt: string | null = null
@@ -77,14 +68,12 @@ export async function createKeyAction(
     expiresAt = d.toISOString()
   }
 
-  const res = await fetch(`${apiBase}/api/projects/keys`, {
+  const res = await fetch(`${apiBase}/api/me/projects/${encodeURIComponent(projectId)}/keys`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-capagent-admin-key": adminKey!,
     },
     body: JSON.stringify({
-      project_id: projectId,
       label: name,
       expires_at: expiresAt,
     }),
@@ -100,19 +89,20 @@ export async function createKeyAction(
   }
 }
 
-export async function deleteKeyAction(keyId: string): Promise<{ success: boolean; message?: string }> {
+export async function deleteKeyAction(
+  projectId: string,
+  keyId: string
+): Promise<{ success: boolean; message?: string }> {
   const user = await getSession()
   if (!user?.id) return { success: false, message: "Unauthorized" }
-
-  const adminKey = process.env.CAPAGENT_ADMIN_API_KEY
   const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787"
 
-  const res = await fetch(`${apiBase}/api/projects/keys/${keyId}`, {
+  const res = await fetch(
+    `${apiBase}/api/me/projects/${encodeURIComponent(projectId)}/keys/${encodeURIComponent(keyId)}`,
+    {
     method: "DELETE",
-    headers: {
-      "x-capagent-admin-key": adminKey!,
-    },
-  })
+    }
+  )
 
   if (!res.ok) return { success: false, message: "Failed to delete API key" }
 

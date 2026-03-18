@@ -30,7 +30,7 @@ export function UserNav({ user }: UserNavProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-neutral-800 text-xs font-semibold">
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
             {user.name?.[0] || user.email?.[0] || "U"}
           </div>
         </Button>

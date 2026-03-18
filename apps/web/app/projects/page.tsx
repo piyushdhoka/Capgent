@@ -29,11 +29,11 @@ export default async function ProjectsPage(props: ProjectsPageProps) {
   const apiKeys = selectedProject ? await getProjectApiKeys(selectedProject.id) : []
 
   return (
-    <div className="container max-w-screen-lg py-10">
+    <div className="container max-w-screen-lg py-12 md:py-16">
       <div className="grid gap-6 md:grid-cols-[240px_1fr]">
         <aside className="space-y-4">
           <div className="px-3 py-2">
-            <h2 className="mb-2 px-4 text-xs font-semibold tracking-tight text-neutral-500 uppercase">
+            <h2 className="mb-2 px-4 text-xs font-semibold tracking-tight text-muted-foreground uppercase">
               Projects
             </h2>
             <div className="space-y-1">
@@ -102,7 +102,7 @@ export default async function ProjectsPage(props: ProjectsPageProps) {
                             
                             <form action={async () => {
                               "use server"
-                              await deleteKeyAction(key.id)
+                              await deleteKeyAction(selectedProject.id, key.id)
                               redirect(`/projects?project_id=${selectedProject.id}`)
                             }}>
                               <Button

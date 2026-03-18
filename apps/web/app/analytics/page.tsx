@@ -49,7 +49,7 @@ export default async function AnalyticsPage(props: AnalyticsPageProps) {
   const overallSuccessRate = totalRuns > 0 ? Math.round((totalSuccesses / totalRuns) * 100) : 0
 
   return (
-    <div className="container max-w-5xl py-10">
+    <div className="container max-w-5xl py-12 md:py-16">
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1.5">
           <Badge variant="secondary" className="gap-1.5">

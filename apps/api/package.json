@@ -7,17 +7,21 @@
     "deploy": "wrangler deploy",
     "build": "wrangler deploy --dry-run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "sample:verify": "bun run scripts/sample-bun.ts"
+    "sample:verify": "bun run scripts/sample-bun.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@capagent/sdk": "0.0.0",
     "@neondatabase/serverless": "^1.0.2",
     "@upstash/redis": "^1.35.3",
+    "drizzle-orm": "^0.44.4",
     "hono": "^4.9.1",
     "jose": "^6.1.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260305.1",
+    "drizzle-kit": "^0.31.4",
     "typescript": "^5.8.2",
     "wrangler": "^4.13.2"
   }

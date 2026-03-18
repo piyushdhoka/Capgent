@@ -1,4 +1,5 @@
 import type { Env } from "../config";
+import { forceInMemory } from "../config";
 import { canUseRedis, createRedis } from "../storage/redis";
 import { createInMemoryStore, createRedisStore, type Store } from "../storage/store";
 
@@ -19,7 +20,7 @@ const GUESTBOOK_TTL_SECONDS = 60 * 60 * 24 * 365;
 const GUESTBOOK_MAX_ENTRIES = 500;
 
 function getStore(env: Env): Store {
-  return !env.CAPAGENT_FORCE_INMEMORY && canUseRedis(env) ? createRedisStore(createRedis(env)) : createInMemoryStore();
+  return !forceInMemory(env) && canUseRedis(env) ? createRedisStore(createRedis(env)) : createInMemoryStore();
 }
 
 export async function addGuestbookEntry(env: Env, entry: GuestbookEntry): Promise<GuestbookEntry> {

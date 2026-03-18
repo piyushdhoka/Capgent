@@ -20,10 +20,11 @@ import { applySteps, hmacSha256Hex, sha256Hex } from "./challenge/eval";
 import { canUseRedis, createRedis } from "./storage/redis";
 import { createInMemoryStore, createRedisStore, type Store } from "./storage/store";
 import { AgentIdentityClaims, signIdentityJwt, signProofJwt, verifyIdentityJwt, verifyProofJwt } from "./auth/jwt";
+import { verifyWebSessionFromCookie } from "./auth/web-session";
 import type { AgentRecord } from "./identity/store";
 import { getAgentById, revokeAgent, saveAgent } from "./identity/store";
 import type { ApiKeyRecord, Project } from "./projects/store";
-import { deleteApiKey, getProjectById, getProjectForApiKeyHash, listApiKeysForProject, saveApiKey, saveProject } from "./projects/store";
+import { deleteApiKey, getApiKeyById, getProjectById, getProjectForApiKeyHash, listApiKeysForProject, listProjectsForOwner, saveApiKey, saveProject } from "./projects/store";
 import type { GuestbookEntry } from "./guestbook/store";
 import { addGuestbookEntry, getGuestbookEntries, clearGuestbook } from "./guestbook/store";
 
@@ -197,6 +198,111 @@ app.use("*", async (c, next) => {
 });
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+async function requireWebUser(c: { env: Env; req: { header(name: string): string | undefined } }) {
+  const cookieHeader = c.req.header("cookie") ?? c.req.header("Cookie") ?? "";
+  const session = await verifyWebSessionFromCookie(c.env, cookieHeader).catch(() => null);
+  if (!session) return null;
+  return session;
+}
+
+app.get("/api/me/projects", async (c) => {
+  const user = await requireWebUser(c);
+  if (!user) return c.json({ error: "unauthorized" }, 401);
+  const projects = await listProjectsForOwner(c.env, user.userId);
+  return c.json({ projects });
+});
+
+app.post("/api/me/projects", async (c) => {
+  const user = await requireWebUser(c);
+  if (!user) return c.json({ error: "unauthorized" }, 401);
+
+  const body = (await c.req.json().catch(() => null)) as { name?: string } | null;
+  const name = body?.name?.trim();
+  if (!name) return c.json({ error: "missing_project_name" }, 400);
+
+  const now = new Date().toISOString();
+  const projectId = crypto.randomUUID();
+  const project: Project = {
+    project_id: projectId,
+    name,
+    created_at: now,
+    owner_id: user.userId,
+  };
+
+  await saveProject(c.env, project);
+  return c.json({ project: { project_id: project.project_id, name: project.name, created_at: project.created_at } });
+});
+
+app.get("/api/me/projects/:projectId/keys", async (c) => {
+  const user = await requireWebUser(c);
+  if (!user) return c.json({ error: "unauthorized" }, 401);
+
+  const projectId = c.req.param("projectId");
+  const project = await getProjectById(c.env, projectId);
+  if (!project) return c.json({ error: "project_not_found" }, 404);
+  if (project.owner_id !== user.userId) return c.json({ error: "forbidden" }, 403);
+
+  const keys = await listApiKeysForProject(c.env, projectId);
+  return c.json({
+    project: { project_id: project.project_id, name: project.name, created_at: project.created_at },
+    api_keys: keys.map((k) => ({
+      key_id: k.key_id,
+      label: k.label,
+      created_at: k.created_at,
+      expires_at: k.expires_at ?? null,
+    })),
+  });
+});
+
+app.post("/api/me/projects/:projectId/keys", async (c) => {
+  const user = await requireWebUser(c);
+  if (!user) return c.json({ error: "unauthorized" }, 401);
+
+  const projectId = c.req.param("projectId");
+  const project = await getProjectById(c.env, projectId);
+  if (!project) return c.json({ error: "project_not_found" }, 404);
+  if (project.owner_id !== user.userId) return c.json({ error: "forbidden" }, 403);
+
+  const body = (await c.req.json().catch(() => null)) as { label?: string; expires_at?: string | null } | null;
+  const label = body?.label?.trim() || null;
+  const expiresAt = body?.expires_at?.trim() || null;
+
+  const now = new Date().toISOString();
+  const keyId = crypto.randomUUID();
+  const rawKey = `capg_sk_${crypto.randomUUID().replace(/-/g, "")}`;
+  const keyHash = await hashApiKeySecret(rawKey);
+  const apiKey: ApiKeyRecord = {
+    key_id: keyId,
+    project_id: projectId,
+    key_hash: keyHash,
+    label,
+    created_at: now,
+    expires_at: expiresAt || null,
+  };
+
+  await saveApiKey(c.env, apiKey);
+  return c.json({ project_id: projectId, api_key: rawKey });
+});
+
+app.delete("/api/me/projects/:projectId/keys/:keyId", async (c) => {
+  const user = await requireWebUser(c);
+  if (!user) return c.json({ error: "unauthorized" }, 401);
+
+  const projectId = c.req.param("projectId");
+  const keyId = c.req.param("keyId");
+
+  const project = await getProjectById(c.env, projectId);
+  if (!project) return c.json({ error: "project_not_found" }, 404);
+  if (project.owner_id !== user.userId) return c.json({ error: "forbidden" }, 403);
+
+  const key = await getApiKeyById(c.env, keyId);
+  if (!key) return c.json({ error: "key_not_found" }, 404);
+  if (key.project_id !== projectId) return c.json({ error: "key_project_mismatch" }, 400);
+
+  await deleteApiKey(c.env, keyId);
+  return c.json({ ok: true });
+});
 
 app.post("/api/projects", async (c) => {
   const adminKey = getAdminApiKey(c.env);

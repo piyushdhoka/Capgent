@@ -45,6 +45,21 @@ export async function getProjectById(env: Env, projectId: string): Promise<Proje
   } as Project;
 }
 
+export async function listProjectsForOwner(env: Env, ownerId: string): Promise<Project[]> {
+  const sql = createDb(env);
+  const rows = await sql`
+    SELECT id as project_id, name, "userId" as owner_id, "createdAt" as created_at
+    FROM project
+    WHERE "userId" = ${ownerId}
+    ORDER BY "createdAt" DESC
+  `;
+
+  return rows.map((row: any) => ({
+    ...row,
+    created_at: row.created_at.toISOString(),
+  })) as Project[];
+}
+
 export async function saveApiKey(env: Env, apiKey: ApiKeyRecord): Promise<void> {
   const sql = createDb(env);
   await sql`
@@ -63,6 +78,21 @@ export async function deleteApiKey(env: Env, keyId: string): Promise<void> {
     DELETE FROM api_key
     WHERE id = ${keyId}
   `;
+}
+
+export async function getApiKeyById(
+  env: Env,
+  keyId: string
+): Promise<{ key_id: string; project_id: string } | null> {
+  const sql = createDb(env);
+  const rows = await sql`
+    SELECT id as key_id, "projectId" as project_id
+    FROM api_key
+    WHERE id = ${keyId}
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  return rows[0] as any;
 }
 
 export async function listApiKeysForProject(env: Env, projectId: string): Promise<ApiKeyRecord[]> {

@@ -47,7 +47,7 @@ export function ProjectSwitcher({ projects }: ProjectSwitcherProps) {
             variant="ghost"
             role="combobox"
             aria-expanded={open}
-            className="h-9 justify-between px-2 text-sm font-medium hover:bg-neutral-800"
+            className="h-9 justify-between px-2 text-sm font-medium hover:bg-muted"
           >
             {selectedProject?.name || "Select project"}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

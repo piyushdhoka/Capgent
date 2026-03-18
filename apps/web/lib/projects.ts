@@ -1,4 +1,4 @@
-import { sql } from "./neon";
+import { cookies } from "next/headers";
 
 export type Project = {
   id: string;
@@ -16,33 +16,43 @@ export type ApiKey = {
 };
 
 export async function getUserProjects(email: string): Promise<Project[]> {
-  const rows = await sql`
-    SELECT p.id, p.name, p."userId", p."createdAt"
-    FROM project p
-    JOIN "user" u ON p."userId" = u.id
-    WHERE u.email = ${email}
-    ORDER BY p."createdAt" DESC
-  `;
-  return rows as unknown as Project[];
+  // Note: email is unused now; projects are fetched via the API using the signed session cookie.
+  const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787";
+  const session = (await cookies()).get("session")?.value ?? "";
+  const res = await fetch(`${apiBase}/api/me/projects`, {
+    cache: "no-store",
+    headers: session ? { cookie: `session=${session}` } : {},
+  });
+  if (!res.ok) return [];
+  const json = (await res.json().catch(() => null)) as { projects?: any[] } | null;
+  return (json?.projects ?? []).map((p) => ({
+    id: p.project_id,
+    name: p.name,
+    userId: p.owner_id ?? "",
+    createdAt: new Date(p.created_at),
+  })) as Project[];
 }
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
-  const rows = await sql`
-    SELECT p.id, p.name, p."userId", p."createdAt"
-    FROM project p
-    WHERE p.id = ${projectId}
-    LIMIT 1
-  `;
-  if (rows.length === 0) return null;
-  return rows[0] as unknown as Project;
+  const projects = await getUserProjects("");
+  const found = projects.find((p) => p.id === projectId) ?? null;
+  return found;
 }
 
 export async function getProjectApiKeys(projectId: string): Promise<ApiKey[]> {
-  const rows = await sql`
-    SELECT id, "projectId", name as label, "createdAt", "expiresAt"
-    FROM api_key
-    WHERE "projectId" = ${projectId}
-    ORDER BY "createdAt" DESC
-  `;
-  return rows as unknown as ApiKey[];
+  const apiBase = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787";
+  const session = (await cookies()).get("session")?.value ?? "";
+  const res = await fetch(`${apiBase}/api/me/projects/${encodeURIComponent(projectId)}/keys`, {
+    cache: "no-store",
+    headers: session ? { cookie: `session=${session}` } : {},
+  });
+  if (!res.ok) return [];
+  const json = (await res.json().catch(() => null)) as { api_keys?: any[] } | null;
+  return (json?.api_keys ?? []).map((k) => ({
+    id: k.key_id,
+    projectId,
+    label: k.label ?? null,
+    createdAt: new Date(k.created_at),
+    expiresAt: k.expires_at ? new Date(k.expires_at) : null,
+  })) as ApiKey[];
 }

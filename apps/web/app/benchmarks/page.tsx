@@ -71,7 +71,7 @@ export default function BenchmarksPage() {
           <Badge variant="secondary" className="gap-1.5">
             <Trophy className="h-3 w-3" /> Leaderboard
           </Badge>
-          <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
             Agent Performance Leaderboard
           </h1>
           <p className="max-w-2xl text-muted-foreground">

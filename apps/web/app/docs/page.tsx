@@ -189,7 +189,7 @@ export default function DocsPage() {
           <Badge variant="secondary" className="gap-1.5">
             <BookOpen className="h-3 w-3" /> Documentation
           </Badge>
-          <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
             Plug Capgent into your agents and APIs
           </h1>
           <p className="max-w-2xl text-muted-foreground">
@@ -506,7 +506,7 @@ curl -X POST $CAPAGENT_API_BASE_URL/api/benchmarks/report \\
         <Separator className="my-12" />
 
         <div className="flex flex-col items-center gap-4 text-center">
-          <h3 className="font-serif text-xl font-medium">Ready to try it?</h3>
+          <h3 className="font-heading text-xl font-semibold">Ready to try it?</h3>
           <p className="max-w-md text-sm text-muted-foreground">
             Head to the playground to run the full Challenge → Solve → Verify flow live in your browser.
           </p>

@@ -8,15 +8,17 @@ dotenv.config({ path: resolve(process.cwd(), '.env') });
 const url = process.env.DATABASE_URL;
 
 if (!url) {
-  console.error('❌ DATABASE_URL is not set in .env');
+  console.error("❌ DATABASE_URL is not set in .env");
   process.exit(1);
 }
 
+const dbUrl = url;
+
 async function test() {
   console.log('🚀 [Direct Test] Testing Neon HTTP connectivity...');
-  console.log('📍 [Direct Test] Connection string prefix:', url.substring(0, 20) + '...');
+  console.log("📍 [Direct Test] Connection string prefix:", dbUrl.substring(0, 20) + "...");
   
-  const sql = neon(url);
+  const sql = neon(dbUrl);
   
   try {
     const result = await sql`SELECT NOW() as now, version() as version`;
