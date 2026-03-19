@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ProjectsForm } from "@/app/projects/ProjectsForm"
-import { CloudArrowDown, Plus } from "@phosphor-icons/react"
+import { CloudArrowDown, Plus } from "@phosphor-icons/react/dist/ssr"
 import { ProjectsTableClient } from "./ProjectsTableClient"
 
 export default async function ProjectsListPage() {

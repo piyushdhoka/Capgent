@@ -5,7 +5,7 @@ import { getProjectApiKeys, getUserProjects } from "@/lib/projects"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Folder, Key, Plus } from "@phosphor-icons/react"
+import { ArrowRight, Folder, Key, Plus } from "@phosphor-icons/react/dist/ssr"
 import { ProjectsForm } from "@/app/projects/ProjectsForm"
 
 export default async function DashboardPage() {
@@ -115,35 +115,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">Your workflow</CardTitle>
-          <CardDescription>Production path in ~2 minutes.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg border p-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Key className="h-4 w-4" /> Create a project
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">Generate API keys for your backend.</p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Key className="h-4 w-4" /> Copy an API key
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">You’ll only see secrets once.</p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Key className="h-4 w-4" /> Integrate
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">Protect your endpoints using your API key.</p>
-          </div>
-        </CardContent>
-      </Card>
-
     </div>
   )
 }
-

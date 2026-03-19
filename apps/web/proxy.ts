@@ -3,15 +3,14 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 if (!process.env.SESSION_SECRET) {
-  throw new Error("❌ [Middleware] SESSION_SECRET is not set. Please add it to your .env file.");
+  throw new Error("[Proxy] SESSION_SECRET is not set. Please add it to your .env file.");
 }
 
 const JWT_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET);
 
-
 const PROTECTED_PREFIXES = ["/protected", "/dashboard"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // 1. Skip if not protected

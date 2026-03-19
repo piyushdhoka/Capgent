@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { KeyCreationForm } from "./KeyCreationForm"
-import { FileText, Key } from "@phosphor-icons/react"
+import { FileText, Key } from "@phosphor-icons/react/dist/ssr"
 import Link from "next/link"
 import { ApiKeysClient } from "./ApiKeysClient"
 

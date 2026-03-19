@@ -6,8 +6,9 @@ import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { ArrowSquareOut, CaretLeft, CaretRight, Folder, House, Key, List } from "@phosphor-icons/react"
+import { ArrowSquareOut, CaretLeft, CaretRight, Folder, House, Key, List, SignOut } from "@phosphor-icons/react"
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { signoutAction } from "@/app/login/actions"
 
 const STORAGE_KEY = "capagent_dashboard_sidebar_collapsed"
 
@@ -19,7 +20,59 @@ const NAV_ITEMS = [
 
 const EXTERNAL_ITEMS = [{ href: "https://changelog.capgent.com", label: "Changelog", icon: ArrowSquareOut }]
 
-export function AppSidebar() {
+type SidebarUser = {
+  name?: string | null
+  email: string
+  image?: string | null
+}
+
+function getInitial(user: SidebarUser) {
+  return (user.name ?? user.email).charAt(0).toUpperCase()
+}
+
+function UserWidget({ user, collapsed }: { user: SidebarUser; collapsed: boolean }) {
+  const initial = getInitial(user)
+  return (
+    <div className={cn("px-2 py-3", collapsed && "px-1")}>
+      {collapsed ? (
+        <form action={signoutAction} className="flex justify-center">
+          <button
+            type="submit"
+            title="Sign out"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
+          >
+            {initial}
+          </button>
+        </form>
+      ) : (
+        <div className="flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-muted/50 transition-colors">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary select-none">
+            {initial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-medium text-foreground leading-tight">
+              {user.name ?? user.email}
+            </div>
+            {user.name && (
+              <div className="truncate text-[11px] text-muted-foreground leading-tight">{user.email}</div>
+            )}
+          </div>
+          <form action={signoutAction}>
+            <button
+              type="submit"
+              title="Sign out"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <SignOut className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function AppSidebar({ user }: { user?: SidebarUser }) {
   const pathname = usePathname() || "/"
   const [collapsed, setCollapsed] = useState(false)
 
@@ -49,7 +102,7 @@ export function AppSidebar() {
               <List className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0">
+          <SheetContent side="left" className="p-0 flex flex-col">
             <div className="flex h-full flex-col">
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-2">
@@ -104,6 +157,12 @@ export function AppSidebar() {
                   )
                 })}
               </div>
+              {user && (
+                <>
+                  <Separator />
+                  <UserWidget user={user} collapsed={false} />
+                </>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -117,29 +176,15 @@ export function AppSidebar() {
         )}
       >
         <div className="flex h-full flex-col">
-          <div className={cn("flex items-center justify-between px-3 py-3", collapsed && "justify-center")}>
-            <Link
-              href="/dashboard"
-              className={cn("flex items-center gap-2", collapsed && "w-full justify-center")}
-              aria-label="Go to dashboard overview"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-muted/40">
-                <House className="h-4 w-4" weight="fill" />
-              </span>
-              {!collapsed && <span className="text-sm font-semibold">Workspace</span>}
-            </Link>
-
-            {!collapsed ? (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 text-muted-foreground hover:text-foreground"
-                onClick={() => setCollapsed(true)}
-                aria-label="Collapse sidebar"
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-1 px-1 py-3">
+              <Link
+                href="/dashboard"
+                className="flex h-9 w-9 items-center justify-center rounded-md bg-muted/40"
+                aria-label="Go to dashboard overview"
               >
-                <CaretLeft className="h-4 w-4" />
-              </Button>
-            ) : (
+                <House className="h-4 w-4" weight="fill" />
+              </Link>
               <Button
                 size="icon"
                 variant="ghost"
@@ -149,8 +194,30 @@ export function AppSidebar() {
               >
                 <CaretRight className="h-4 w-4" />
               </Button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between px-3 py-3">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2"
+                aria-label="Go to dashboard overview"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-md bg-muted/40">
+                  <House className="h-4 w-4" weight="fill" />
+                </span>
+                <span className="text-sm font-semibold">Workspace</span>
+              </Link>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                onClick={() => setCollapsed(true)}
+                aria-label="Collapse sidebar"
+              >
+                <CaretLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           <Separator />
 
@@ -204,9 +271,15 @@ export function AppSidebar() {
               )
             })}
           </div>
+
+          {user && (
+            <>
+              <Separator />
+              <UserWidget user={user} collapsed={collapsed} />
+            </>
+          )}
         </div>
       </aside>
     </>
   )
 }
-
