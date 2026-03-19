@@ -14,7 +14,8 @@ import {
 import { createKeyAction } from "./actions"
 import { Copy, Check, AlertCircle } from "lucide-react"
 
-export function KeyCreationForm({ projectId }: { projectId: string }) {
+export function KeyCreationForm({ projects, preselectedProjectId }: { projects: { id: string, name: string }[], preselectedProjectId?: string }) {
+  const [projectId, setProjectId] = useState(preselectedProjectId || (projects.length > 0 ? projects[0].id : ""))
   const [name, setName] = useState("")
   const [expiresIn, setExpiresIn] = useState("30")
   const [loading, setLoading] = useState(false)
@@ -23,7 +24,7 @@ export function KeyCreationForm({ projectId }: { projectId: string }) {
   const [copied, setCopied] = useState(false)
 
   async function handleCreate() {
-    if (!name.trim()) return
+    if (!name.trim() || !projectId) return
     setLoading(true)
     setError(null)
     try {
@@ -74,8 +75,31 @@ export function KeyCreationForm({ projectId }: { projectId: string }) {
     )
   }
 
+  if (projects.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground p-4 text-center">
+        You need to create a project first before generating an API key.
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4 p-4 border border-zinc-800 rounded-lg bg-zinc-900/50">
+      <div className="space-y-2">
+        <Label htmlFor="project-select">Project</Label>
+        <Select value={projectId} onValueChange={setProjectId}>
+          <SelectTrigger id="project-select">
+            <SelectValue placeholder="Select a project" />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="key-name">API Key Name</Label>
         <Input
@@ -108,7 +132,7 @@ export function KeyCreationForm({ projectId }: { projectId: string }) {
       )}
       <Button 
         className="w-full" 
-        disabled={!name.trim() || loading} 
+        disabled={!name.trim() || !projectId || loading} 
         onClick={handleCreate}
       >
         {loading ? "Creating..." : "Create API Key"}
