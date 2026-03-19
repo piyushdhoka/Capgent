@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 export function AppShell({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl">
+    <div className="container flex w-full max-w-screen-xl">
       <AppSidebar />
       <div className={cn("min-w-0 flex-1", className)}>{children}</div>
     </div>

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, Loader2, AlertCircle } from "lucide-react"
+import { ShieldCheck, SpinnerGap, WarningCircle } from "@phosphor-icons/react"
 import * as motion from "motion/react-client"
 
 export default function ProtectedPage() {
@@ -52,7 +52,7 @@ export default function ProtectedPage() {
         {loading && (
           <Card className="mt-8">
             <CardContent className="flex items-center justify-center gap-3 p-12">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <SpinnerGap className="h-5 w-5 animate-spin text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Verifying proof token...</span>
             </CardContent>
           </Card>
@@ -61,7 +61,7 @@ export default function ProtectedPage() {
         {err && (
           <Card className="mt-8 border-destructive/50">
             <CardContent className="flex items-start gap-3 p-5">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+              <WarningCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
               <div>
                 <p className="font-medium text-destructive">Access Denied</p>
                 <p className="mt-1 text-sm text-muted-foreground">{err}</p>

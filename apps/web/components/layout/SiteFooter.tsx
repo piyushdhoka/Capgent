@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { Github, Linkedin, Moon, Sun, X } from "lucide-react"
+import { GithubLogo, LinkedinLogo, Moon, Sun, XLogo } from "@phosphor-icons/react"
 import { useEffect, useState } from "react"
 
 type FooterLink = { href: string; label: string; external?: boolean }
@@ -138,13 +138,13 @@ export function SiteFooter() {
 
           <div className="flex items-center gap-2">
             <SocialIcon href="https://www.linkedin.com" label="LinkedIn">
-              <Linkedin className="h-4 w-4" />
+              <LinkedinLogo className="h-4 w-4" />
             </SocialIcon>
             <SocialIcon href="https://x.com" label="X">
-              <X className="h-4 w-4" />
+              <XLogo className="h-4 w-4" />
             </SocialIcon>
             <SocialIcon href="https://github.com" label="GitHub">
-              <Github className="h-4 w-4" />
+              <GithubLogo className="h-4 w-4" />
             </SocialIcon>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, PlusCircle, Settings, BookOpen } from "lucide-react"
+import { BookOpen, CaretUpDown, Check, Gear, PlusCircle } from "@phosphor-icons/react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { cn } from "@/lib/utils"
@@ -50,7 +50,7 @@ export function ProjectSwitcher({ projects }: ProjectSwitcherProps) {
             className="h-9 justify-between px-2 text-sm font-medium hover:bg-muted"
           >
             {selectedProject?.name || "Select project"}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <CaretUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0">
@@ -99,7 +99,7 @@ export function ProjectSwitcher({ projects }: ProjectSwitcherProps) {
                     setOpen(false)
                   }}
                 >
-                  <Settings className="mr-2 h-4 w-4" />
+                  <Gear className="mr-2 h-4 w-4" />
                   Manage Projects
                 </CommandItem>
                 <CommandItem

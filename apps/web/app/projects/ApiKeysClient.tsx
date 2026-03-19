@@ -1,20 +1,33 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Trash, ChevronDown, Check } from "lucide-react"
+import { CaretDown, Check, Trash } from "@phosphor-icons/react"
 import { ApiKeyDetailsDialog } from "./ApiKeyDetailsDialog"
 import { deleteKeyAction } from "./actions"
 
-export function ApiKeysClient({ allKeys, projects }: { allKeys: any[], projects: any[] }) {
+export function ApiKeysClient({
+  allKeys,
+  projects,
+  initialProjectId,
+}: {
+  allKeys: any[]
+  projects: any[]
+  initialProjectId?: string
+}) {
   const [groupBy, setGroupBy] = useState<"key" | "project">("key")
-  const [filterProject, setFilterProject] = useState<string>("all")
+  const [filterProject, setFilterProject] = useState<string>(initialProjectId ?? "all")
+
+  useEffect(() => {
+    setFilterProject(initialProjectId ?? "all")
+  }, [initialProjectId])
 
   const filteredKeys = useMemo(() => {
     if (filterProject === "all") return allKeys
@@ -31,24 +44,16 @@ export function ApiKeysClient({ allKeys, projects }: { allKeys: any[], projects:
       <div className="flex items-center justify-between text-sm py-2">
         <div className="flex items-center gap-3">
           <span className="text-muted-foreground text-xs font-semibold">Group by</span>
-          <div className="flex items-center rounded-full bg-muted border border-border/40 p-0.5">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setGroupBy("key")}
-              className={`rounded-full h-8 px-4 text-xs shadow-sm border-none ${groupBy === "key" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              API key
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setGroupBy("project")}
-              className={`rounded-full h-8 px-4 text-xs shadow-sm border-none ${groupBy === "project" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Project
-            </Button>
-          </div>
+          <Tabs value={groupBy} onValueChange={(v) => setGroupBy(v as "key" | "project")}>
+            <TabsList className="rounded-full bg-muted/40 border border-border/40">
+              <TabsTrigger value="key" className="rounded-full px-4 text-xs">
+                API key
+              </TabsTrigger>
+              <TabsTrigger value="project" className="rounded-full px-4 text-xs">
+                Project
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs font-semibold">Filter by</span>
@@ -56,7 +61,7 @@ export function ApiKeysClient({ allKeys, projects }: { allKeys: any[], projects:
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2 bg-muted border border-border/40 h-8 text-xs hover:bg-muted/80 rounded-lg shadow-sm">
                 {filterProject === "all" ? "All projects" : projects.find(p => p.id === filterProject)?.name} 
-                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
+                <CaretDown className="h-3 w-3 text-muted-foreground ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
@@ -97,11 +102,11 @@ export function ApiKeysClient({ allKeys, projects }: { allKeys: any[], projects:
               <ApiKeyDetailsDialog key={k.id} apiKey={{...k, project: { id: k.project.id, name: k.project.name }}}>
                 <div role="button" aria-label="View API key details" className="grid grid-cols-[2.5fr_2fr_1.5fr_auto] items-center gap-4 p-4 hover:bg-muted/30 transition-colors cursor-pointer group text-left">
                   <div>
-                    <div className="font-mono text-[14px] text-blue-500 dark:text-blue-400 group-hover:underline">...{k.id.slice(-4)}</div>
+                    <div className="font-mono text-[14px] text-foreground group-hover:underline">...{k.id.slice(-4)}</div>
                     <div className="text-[12px] text-muted-foreground mt-0.5">{k.label || "Untitled key"}</div>
                   </div>
                   <div>
-                    <div className="font-medium text-[14px] text-blue-500 dark:text-blue-400">{k.project.name}</div>
+                    <div className="font-medium text-[14px] text-foreground">{k.project.name}</div>
                     <div className="text-[12px] text-muted-foreground mt-0.5 font-mono">{k.project.id}</div>
                   </div>
                   <div className="text-[13px] text-muted-foreground">
@@ -130,11 +135,11 @@ export function ApiKeysClient({ allKeys, projects }: { allKeys: any[], projects:
                         <ApiKeyDetailsDialog key={k.id} apiKey={{...k, project: { id: k.project.id, name: k.project.name }}}>
                           <div role="button" aria-label="View API key details" className="grid grid-cols-[2.5fr_2fr_1.5fr_auto] items-center gap-4 p-4 hover:bg-muted/30 transition-colors cursor-pointer group text-left">
                             <div>
-                              <div className="font-mono text-[14px] text-blue-500 dark:text-blue-400 group-hover:underline">...{k.id.slice(-4)}</div>
+                              <div className="font-mono text-[14px] text-foreground group-hover:underline">...{k.id.slice(-4)}</div>
                               <div className="text-[12px] text-muted-foreground mt-0.5">{k.label || "Untitled key"}</div>
                             </div>
                             <div>
-                              <div className="font-medium text-[14px] text-blue-500 dark:text-blue-400">{k.project.name}</div>
+                              <div className="font-medium text-[14px] text-foreground">{k.project.name}</div>
                               <div className="text-[12px] text-muted-foreground mt-0.5 font-mono">{k.project.id}</div>
                             </div>
                             <div className="text-[13px] text-muted-foreground">

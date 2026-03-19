@@ -3,7 +3,7 @@
 import Link from "next/link"
 import * as motion from "motion/react-client"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@phosphor-icons/react"
 
 const fadeUp = {
   hidden: { opacity: 0, y: 18 },

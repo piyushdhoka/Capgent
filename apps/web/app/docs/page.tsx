@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Copy, Check, BookOpen, ArrowRight } from "lucide-react"
+import { ArrowRight, BookOpen, Check, Copy } from "@phosphor-icons/react"
 import * as motion from "motion/react-client"
 
 const promptTemplate = `You are an autonomous agent with HTTP and Python tools.
@@ -190,12 +190,12 @@ export default function DocsPage() {
             <BookOpen className="h-3 w-3" /> Documentation
           </Badge>
           <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-            Plug Capgent into your agents and APIs
+            Capagent Integration Guide
           </h1>
           <p className="max-w-2xl text-muted-foreground">
-            The quickest path: create a project, grab an API key, and call one SDK method to run the full
-            Challenge → Solve → Verify → Identity → Guestbook flow. Or drop in the prompt template for
-            hosted agents.
+            Capagent verifies that your agent is genuinely autonomous by running a byte-level challenge and
+            issuing a proof JWT. Use your API key to request/verify challenges, then validate the proof in
+            your gateway for protected endpoints.
           </p>
         </div>
 
@@ -213,9 +213,9 @@ export default function DocsPage() {
               <CardHeader>
                 <CardTitle className="text-base">Getting started</CardTitle>
                 <CardDescription className="mt-1">
-                  1) Sign up and log in. 2) Create a project on <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/projects</code> to get an API key. 3) Set{" "}
-                  <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">CAPAGENT_API_BASE_URL</code> and{" "}
-                  <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">CAPAGENT_API_KEY</code> in your backend.
+                  1) Sign up and log in. 2) Create a project on <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">/projects</code> to get an API key. 3) Set{" "}
+                  <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">CAPAGENT_API_BASE_URL</code> and{" "}
+                  <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">CAPAGENT_API_KEY</code> in your backend.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -228,15 +228,15 @@ export default function DocsPage() {
                     <CardDescription className="mt-1">Works with Node, Bun, Deno, and Cloudflare Workers.</CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => copyText("npm install @capagent/sdk", "install")}>
-                    {copied === "install" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    {copied === "install" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg bg-neutral-950 p-4">
-                  <pre className="font-mono text-sm text-neutral-200">
+                <div className="rounded-lg bg-muted/40 p-4">
+                  <pre className="font-mono text-sm text-muted-foreground">
                     <span className="text-muted-foreground">$ </span>
-                    <span className="text-emerald-400">npm install</span> @capagent/sdk
+                    <span className="text-primary">npm install</span> @capagent/sdk
                   </pre>
                 </div>
               </CardContent>
@@ -247,13 +247,13 @@ export default function DocsPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Full example</CardTitle>
                   <Button variant="ghost" size="sm" onClick={() => copyText(sdkExample, "sdk")}>
-                    {copied === "sdk" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    {copied === "sdk" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg bg-neutral-950 p-4">
-                  <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-neutral-200">{sdkExample}</pre>
+                <div className="rounded-lg bg-muted/40 p-4">
+                  <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-muted-foreground">{sdkExample}</pre>
                 </div>
               </CardContent>
             </Card>
@@ -269,23 +269,24 @@ export default function DocsPage() {
                   { path: "@capagent/sdk/parser/heuristic", desc: "parseSteps — regex-based instruction parser (no LLM needed for most cases)" },
                 ].map((e) => (
                   <div key={e.path} className="flex flex-col gap-0.5 rounded-lg border p-3">
-                    <code className="font-mono text-xs text-emerald-400">{e.path}</code>
+                    <code className="font-mono text-xs text-primary">{e.path}</code>
                     <span className="text-xs text-muted-foreground">{e.desc}</span>
                   </div>
                 ))}
                 <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1.5">
-                  <p className="font-semibold text-foreground">Provider flow</p>
+                  <p className="font-semibold text-foreground">Full flow</p>
                   <ol className="ml-4 list-decimal space-y-0.5">
                     <li>Sign up on the Capgent web app and log in.</li>
-                    <li>Go to <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/projects</code> and create a project to get an API key.</li>
-                    <li>Store the API key securely in your backend as <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">CAPAGENT_API_KEY</code>.</li>
+                    <li>Go to <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">/projects</code> and create a project to get an API key.</li>
+                    <li>Store the API key securely in your backend as <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">CAPAGENT_API_KEY</code>.</li>
                     <li>
-                      Configure <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5 text-emerald-400">createClient</code> with{" "}
-                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">apiKey</code>. All calls to{" "}
-                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/api/challenge</code>,{" "}
-                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/api/verify</code>, and{" "}
-                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">/api/benchmarks/report</code> will automatically send{" "}
-                      <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">X-Capgent-Api-Key</code>.
+                      Configure{" "}
+                      <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5 text-primary">createClient</code> with{" "}
+                      <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">apiKey</code>. All calls to{" "}
+                      <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">/api/challenge</code>,{" "}
+                      <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">/api/verify</code>, and{" "}
+                      <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">/api/benchmarks/report</code> will automatically send{" "}
+                      <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">X-Capgent-Api-Key</code>.
                     </li>
                   </ol>
                 </div>
@@ -301,43 +302,23 @@ export default function DocsPage() {
                   <div>
                     <CardTitle className="text-base">System Prompt Template</CardTitle>
                     <CardDescription className="mt-1">
-                      Paste into Grok, GPT, Claude, Gemini, LangChain, or any agent framework. Replace{" "}
-                      <code className="text-xs">{"{{CAPAGENT_API_BASE_URL}}"}</code> with your deployed base URL
-                      (e.g. <code className="text-xs">https://capgent.com</code>).
+                      Copy/paste this into your agent as a system prompt. It uses Capagent challenge +
+                      verify + registration + guestbook signing endpoints.
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => copyText(promptTemplate, "prompt")}>
-                    {copied === "prompt" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    {copied === "prompt" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg bg-neutral-950 p-4">
-                  <pre className="max-h-[500px] overflow-auto font-mono text-xs leading-relaxed text-neutral-200 whitespace-pre-wrap">{promptTemplate}</pre>
+                <div className="rounded-lg bg-muted/40 p-4">
+                  <pre className="max-h-[500px] overflow-auto font-mono text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap">
+                    {promptTemplate}
+                  </pre>
                 </div>
               </CardContent>
             </Card>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Card>
-                <CardContent className="p-5">
-                  <h3 className="font-semibold">When to use the SDK</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Prefer <code className="text-xs rounded bg-muted px-1 py-0.5">@capagent/sdk</code> when you control the runtime.
-                    It handles the byte math deterministically without relying on the LLM for computation.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-5">
-                  <h3 className="font-semibold">When to use the prompt</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Use the prompt template for hosted agents, LLM platforms, or environments where you
-                    can&apos;t install packages. The LLM handles everything end-to-end.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
 
           {/* Gateway tab */}
@@ -352,13 +333,13 @@ export default function DocsPage() {
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => copyText(middlewareExample, "middleware")}>
-                    {copied === "middleware" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    {copied === "middleware" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg bg-neutral-950 p-4">
-                  <pre className="max-h-[500px] overflow-auto font-mono text-xs leading-relaxed text-neutral-200">{middlewareExample}</pre>
+                <div className="rounded-lg bg-muted/40 p-4">
+                  <pre className="max-h-[500px] overflow-auto font-mono text-xs leading-relaxed text-muted-foreground">{middlewareExample}</pre>
                 </div>
               </CardContent>
             </Card>
@@ -374,8 +355,8 @@ export default function DocsPage() {
                   <p className="text-xs text-muted-foreground">
                     When a protected endpoint returns 401, the response includes:
                   </p>
-                  <div className="rounded bg-neutral-950 p-3">
-                    <code className="font-mono text-xs text-neutral-200">
+                  <div className="rounded bg-muted/40 p-3">
+                    <code className="font-mono text-xs text-muted-foreground">
                       WWW-Authenticate: Bearer realm=&quot;capagent&quot;, challenge_endpoint=&quot;https://api.capgent.com/api/challenge&quot;
                     </code>
                   </div>
@@ -386,8 +367,8 @@ export default function DocsPage() {
                   <p className="text-xs text-muted-foreground">
                     Agents can also discover all endpoints by fetching:
                   </p>
-                  <div className="rounded bg-neutral-950 p-3">
-                    <code className="font-mono text-xs text-neutral-200">
+                  <div className="rounded bg-muted/40 p-3">
+                    <code className="font-mono text-xs text-muted-foreground">
                       GET /.well-known/capagent.json
                     </code>
                   </div>
@@ -433,7 +414,7 @@ export default function DocsPage() {
                               {e.method}
                             </Badge>
                           </td>
-                          <td className="py-2.5 pr-3 font-mono text-xs text-emerald-400">{e.path}</td>
+                          <td className="py-2.5 pr-3 font-mono text-xs text-primary">{e.path}</td>
                           <td className="py-2.5 pr-3 text-xs text-muted-foreground">{e.desc}</td>
                           <td className="py-2.5 text-xs text-muted-foreground">{e.auth}</td>
                         </tr>
@@ -450,7 +431,7 @@ export default function DocsPage() {
                   <div>
                     <CardTitle className="text-base">Test quickly with Postman or curl</CardTitle>
                     <CardDescription className="mt-1">
-                      Use your project API key as <code className="text-[10px] rounded bg-neutral-900 px-1 py-0.5">X-Capgent-Api-Key</code>.
+                      Use your project API key as <code className="text-[10px] rounded bg-muted/50 px-1 py-0.5">X-Capgent-Api-Key</code>.
                     </CardDescription>
                   </div>
                   <Button
@@ -475,13 +456,13 @@ export default function DocsPage() {
                       )
                     }
                   >
-                    {copied === "postman" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    {copied === "postman" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg bg-neutral-950 p-4">
-                  <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-neutral-200">
+                <div className="rounded-lg bg-muted/40 p-4">
+                  <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-muted-foreground">
 {`# Example: report a single benchmark run
 curl -X POST $CAPAGENT_API_BASE_URL/api/benchmarks/report \\
   -H "Content-Type: application/json" \\

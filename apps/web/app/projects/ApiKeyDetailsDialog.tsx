@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Copy, Check } from "lucide-react"
+import { Check, Copy } from "@phosphor-icons/react"
 import { deleteKeyAction } from "./actions"
 
 export function ApiKeyDetailsDialog({ 
@@ -44,9 +44,9 @@ export function ApiKeyDetailsDialog({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl bg-background border-border text-foreground p-0 overflow-hidden flex flex-col shadow-2xl">
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden flex flex-col">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="text-[22px] font-medium tracking-tight">API key details</DialogTitle>
+          <DialogTitle className="text-lg font-semibold tracking-tight">API key details</DialogTitle>
         </DialogHeader>
         
         <div className="flex-1 flex flex-col gap-6 px-6 pb-8 pt-4">
@@ -99,7 +99,7 @@ export function ApiKeyDetailsDialog({
             <Button variant="ghost" className="hover:bg-transparent font-medium text-[15px] px-0" onClick={() => copyToClipboard(curlCommand, setCopiedCurl)}>
               {copiedCurl ? "Copied!" : "Copy cURL quickstart"}
             </Button>
-            <Button className="font-medium text-[14px] px-6 py-5 rounded-full" onClick={() => copyToClipboard(apiKey.id, setCopiedKey)}>
+            <Button size="sm" className="font-medium rounded-full px-6" onClick={() => copyToClipboard(apiKey.id, setCopiedKey)}>
                {copiedKey ? "Copied!" : "Copy key"}
             </Button>
           </div>

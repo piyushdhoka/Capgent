@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, CheckCircle2, Lock, Unlock, Terminal, Cpu, RotateCcw, Users, BarChart3 } from "lucide-react"
+import { ArrowsCounterClockwise, ChartBar, CheckCircle, Cpu, LockOpen, LockSimple, SpinnerGap, Terminal, Users } from "@phosphor-icons/react"
 import * as motion from "motion/react-client"
 
 type SolverOutput = {
@@ -187,7 +187,7 @@ export default function PlaygroundPage() {
                 <div key={s.label} className="flex items-center gap-2">
                   {i > 0 && <div className={`h-px w-6 ${s.done ? "bg-emerald-500" : "bg-border"}`} />}
                   <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${s.done ? "bg-emerald-500 text-white" : "border bg-muted text-muted-foreground"}`}>
-                    {s.done ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+                    {s.done ? <CheckCircle className="h-4 w-4" /> : i + 1}
                   </div>
                   <span className={`text-xs ${s.done ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</span>
                 </div>
@@ -199,11 +199,11 @@ export default function PlaygroundPage() {
             {/* Action buttons */}
             <div className="flex flex-wrap gap-3">
               <Button onClick={onGetChallenge} disabled={busy || !!challenge} size="sm">
-                {busy && status.includes("Fetching") ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                {busy && status.includes("Fetching") ? <SpinnerGap className="h-4 w-4 animate-spin" /> : <LockSimple className="h-4 w-4" />}
                 Get Challenge
               </Button>
               <Button onClick={onSolve} disabled={busy || !challenge || !!solve} variant="secondary" size="sm">
-                {busy && status.includes("LLM") ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cpu className="h-4 w-4" />}
+                {busy && status.includes("LLM") ? <SpinnerGap className="h-4 w-4 animate-spin" /> : <Cpu className="h-4 w-4" />}
                 Solve with LLM
               </Button>
               <Button
@@ -213,19 +213,19 @@ export default function PlaygroundPage() {
                 size="sm"
                 className={token ? "border-emerald-500/50 text-emerald-500" : ""}
               >
-                {busy && status.includes("Submitting") ? <Loader2 className="h-4 w-4 animate-spin" /> : token ? <CheckCircle2 className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                {busy && status.includes("Submitting") ? <SpinnerGap className="h-4 w-4 animate-spin" /> : token ? <CheckCircle className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
                 Verify & Get JWT
               </Button>
               {(challenge || token) && (
                 <Button variant="ghost" size="sm" onClick={onReset}>
-                  <RotateCcw className="h-4 w-4" /> Reset
+                  <ArrowsCounterClockwise className="h-4 w-4" /> Reset
                 </Button>
               )}
             </div>
 
             {status && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
+                <SpinnerGap className="h-3 w-3 animate-spin" />
                 {status}
               </div>
             )}
@@ -245,7 +245,7 @@ export default function PlaygroundPage() {
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <CheckCircle className="h-5 w-5 text-emerald-500" />
                   </div>
                   <div>
                     <p className="font-semibold">Verification Complete</p>
@@ -269,7 +269,7 @@ export default function PlaygroundPage() {
                   </Button>
                   <Button asChild variant="outline" size="sm" className="gap-1.5">
                     <Link href="/benchmarks">
-                      <BarChart3 className="h-3.5 w-3.5" /> Benchmarks
+                      <ChartBar className="h-3.5 w-3.5" /> Benchmarks
                     </Link>
                   </Button>
                 </div>

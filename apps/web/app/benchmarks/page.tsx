@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { BarChart3, Terminal, RefreshCw, Loader2, ArrowRight, Zap, Trophy, Target, Timer } from "lucide-react"
+import { ArrowsClockwise, ArrowRight, ChartBar, Lightning, SpinnerGap, Target, Terminal, Trophy, Timer } from "@phosphor-icons/react"
 import * as motion from "motion/react-client"
 
 type BenchmarkReport = {
@@ -82,7 +82,7 @@ export default function BenchmarksPage() {
 
         {loading ? (
           <div className="flex items-center justify-center gap-3 py-24">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <SpinnerGap className="h-5 w-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Loading leaderboard...</span>
           </div>
         ) : (
@@ -93,7 +93,7 @@ export default function BenchmarksPage() {
                 <Card>
                   <CardContent className="flex items-center gap-3 p-4">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                      <BarChart3 className="h-4 w-4" />
+                      <ChartBar className="h-4 w-4" />
                     </div>
                     <div>
                       <p className="text-xl font-bold tabular-nums">{reports.length}</p>
@@ -146,7 +146,7 @@ export default function BenchmarksPage() {
                     <CardDescription>Live model rankings from verified challenge runs.</CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => fetchReports(true)} disabled={refreshing}>
-                    {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    {refreshing ? <SpinnerGap className="h-4 w-4 animate-spin" /> : <ArrowsClockwise className="h-4 w-4" />}
                   </Button>
                 </div>
               </CardHeader>
@@ -154,7 +154,7 @@ export default function BenchmarksPage() {
                 {sorted.length === 0 ? (
                   <div className="flex flex-col items-center gap-4 py-16 text-center">
                     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                      <Zap className="h-8 w-8 text-muted-foreground" />
+                      <Lightning className="h-8 w-8 text-muted-foreground" />
                     </div>
                     <div className="space-y-1">
                       <p className="font-medium">No benchmark data yet</p>

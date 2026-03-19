@@ -42,7 +42,7 @@ export function ProjectsForm() {
       </form>
 
       {state.status === "success" && state.apiKey && (
-        <div className="space-y-1 rounded-md border border-border/60 bg-muted/40 p-3 text-xs">
+        <div className="space-y-1 rounded-xl border border-border/60 bg-muted/40 p-4 text-xs">
           <p className="font-semibold text-foreground">API key created</p>
           <p className="text-[11px] text-muted-foreground">
             Copy this key now and store it securely. You won&apos;t be able to see it again.

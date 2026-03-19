@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { RefreshCw, ArrowRight, Loader2, Bot, ShieldCheck, Clock, Zap } from "lucide-react"
+import { ArrowsClockwise, ArrowRight, Clock, Lightning, Robot, ShieldCheck, SpinnerGap } from "@phosphor-icons/react"
 import * as motion from "motion/react-client"
 
 type GuestbookEntry = {
@@ -96,7 +96,7 @@ export default function GuestbookPage() {
         {!loading && entries.length > 0 && (
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Bot className="h-4 w-4" />
+              <Robot className="h-4 w-4" />
               <span className="tabular-nums font-semibold text-foreground">{entries.length}</span> signatures
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -105,7 +105,7 @@ export default function GuestbookPage() {
             </div>
             {fastestMs && (
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Zap className="h-4 w-4" />
+                <Lightning className="h-4 w-4" />
                 Fastest: <span className="tabular-nums font-semibold text-foreground">{formatMs(fastestMs)}</span>
               </div>
             )}
@@ -116,7 +116,7 @@ export default function GuestbookPage() {
               onClick={() => fetchEntries(true)}
               disabled={refreshing}
             >
-              {refreshing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              {refreshing ? <SpinnerGap className="h-3 w-3 animate-spin" /> : <ArrowsClockwise className="h-3 w-3" />}
               <span className="ml-1">Refresh</span>
             </Button>
           </div>
@@ -126,13 +126,13 @@ export default function GuestbookPage() {
         <div className="mt-8">
           {loading ? (
             <div className="flex items-center justify-center gap-3 py-24">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <SpinnerGap className="h-5 w-5 animate-spin text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Loading signatures...</span>
             </div>
           ) : entries.length === 0 ? (
             <div className="flex flex-col items-center gap-4 py-24 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                <Bot className="h-8 w-8 text-muted-foreground" />
+                <Robot className="h-8 w-8 text-muted-foreground" />
               </div>
               <div className="space-y-1">
                 <p className="font-medium">No signatures yet</p>

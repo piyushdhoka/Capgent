@@ -1,6 +1,6 @@
 "use client"
 
-import { LogOut, User } from "lucide-react"
+import { SignOut, User } from "@phosphor-icons/react"
 import { useRouter } from "next/navigation"
 
 import {
@@ -55,7 +55,7 @@ export function UserNav({ user }: UserNavProps) {
         <form action={signoutAction}>
           <DropdownMenuItem asChild>
             <button type="submit" className="w-full justify-start text-red-500 focus:text-red-500 cursor-pointer">
-              <LogOut className="mr-2 h-4 w-4" />
+              <SignOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </button>
           </DropdownMenuItem>

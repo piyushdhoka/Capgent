@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createKeyAction } from "./actions"
-import { Copy, Check, AlertCircle } from "lucide-react"
+import { Copy, Check, WarningCircle } from "@phosphor-icons/react"
 
 export function KeyCreationForm({ projects, preselectedProjectId }: { projects: { id: string, name: string }[], preselectedProjectId?: string }) {
   const [projectId, setProjectId] = useState(preselectedProjectId || (projects.length > 0 ? projects[0].id : ""))
@@ -52,20 +52,20 @@ export function KeyCreationForm({ projects, preselectedProjectId }: { projects: 
 
   if (apiKey) {
     return (
-      <div className="p-4 border border-green-500/50 bg-green-500/10 rounded-lg space-y-4">
-        <div className="flex items-center gap-2 text-green-500 font-medium">
-          <Check className="w-4 h-4" />
+      <div className="p-4 border border-emerald-500/30 bg-emerald-500/10 rounded-xl space-y-4">
+        <div className="flex items-center gap-2 text-emerald-500 font-medium">
+          <Check className="h-4 w-4" />
           API Key created successfully!
         </div>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           Copy this key now. You won't be able to see it again once you leave this page.
         </p>
         <div className="flex items-center gap-2">
-          <code className="flex-1 p-2 bg-zinc-900 rounded border border-zinc-800 font-mono text-sm break-all">
+          <code className="flex-1 p-2 bg-muted/40 rounded-md border border-border/40 font-mono text-sm break-all">
             {apiKey}
           </code>
           <Button variant="outline" size="icon" onClick={handleCopy}>
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
         <Button className="w-full" onClick={() => window.location.reload()}>
@@ -77,14 +77,14 @@ export function KeyCreationForm({ projects, preselectedProjectId }: { projects: 
 
   if (projects.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground p-4 text-center">
+      <div className="text-sm text-muted-foreground p-4 text-center rounded-xl border border-dashed border-border/60 bg-muted/20">
         You need to create a project first before generating an API key.
       </div>
     )
   }
 
   return (
-    <div className="space-y-4 p-4 border border-zinc-800 rounded-lg bg-zinc-900/50">
+    <div className="space-y-4 p-4 border border-border/60 rounded-xl bg-card">
       <div className="space-y-2">
         <Label htmlFor="project-select">Project</Label>
         <Select value={projectId} onValueChange={setProjectId}>
@@ -125,8 +125,8 @@ export function KeyCreationForm({ projects, preselectedProjectId }: { projects: 
         </Select>
       </div>
       {error && (
-        <div className="flex items-center gap-2 text-red-500 text-sm">
-          <AlertCircle className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-destructive text-sm">
+          <WarningCircle className="h-4 w-4" />
           {error}
         </div>
       )}
