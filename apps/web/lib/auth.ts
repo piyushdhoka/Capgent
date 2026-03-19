@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { cookies } from "next/headers";
 import { sql } from "./neon";
 import { SignJWT, jwtVerify } from "jose";
@@ -9,14 +10,13 @@ if (!process.env.SESSION_SECRET) {
 
 const JWT_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET);
 
-
 /**
  * Manual Authentication & Session System
  * Powered by Neon HTTP (Direct SQL) and JWT Cookies.
  */
 
 export async function createSession(userId: string) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await new SignJWT({ userId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -49,26 +49,28 @@ export async function verifySession() {
       algorithms: ["HS256"],
     });
     return payload as { userId: string };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
 /**
- * Get the currently logged-in user
+ * Get the currently logged-in user.
+ * Wrapped with React.cache() so multiple calls within the same request
+ * (root layout, dashboard layout, page) only hit the database once.
  */
-export async function getSession() {
+export const getSession = cache(async () => {
   const session = await verifySession();
   if (!session) return null;
 
   try {
     const users = await sql`SELECT id, name, email, image FROM "user" WHERE id = ${session.userId} LIMIT 1`;
-    return users[0] || null;
+    return (users[0] as { id: string; name: string | null; email: string; image: string | null }) ?? null;
   } catch (error) {
     console.error("❌ [Auth] Failed to fetch session user:", error);
     return null;
   }
-}
+});
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -82,7 +84,6 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 
 export async function signIn(email: string, password: string) {
   try {
-    // 1. Find user and account
     const users = await sql`
       SELECT u.id, a.password 
       FROM "user" u
@@ -91,16 +92,14 @@ export async function signIn(email: string, password: string) {
       LIMIT 1
     `;
 
-    const user = users[0];
+    const user = users[0] as { id: string; password: string } | undefined;
     if (!user) throw new Error("Invalid email or password");
 
-    // 2. Verify password
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
       throw new Error("Invalid email or password");
     }
 
-    // 3. Create session
     await createSession(user.id);
     return { success: true };
   } catch (error) {
@@ -114,20 +113,17 @@ export async function signUp(name: string, email: string, password: string) {
     const userId = crypto.randomUUID();
     const now = new Date();
 
-    // 1. Create user
     await sql`
       INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt")
       VALUES (${userId}, ${name}, ${email}, false, ${now}, ${now})
     `;
 
-    // 2. Create account (with password)
     const accountId = crypto.randomUUID();
     await sql`
       INSERT INTO "account" (id, "userId", "accountId", "providerId", password, "createdAt", "updatedAt")
       VALUES (${accountId}, ${userId}, ${userId}, 'credential', ${await hashPassword(password)}, ${now}, ${now})
     `;
 
-    // 3. Create session
     await createSession(userId);
     return { success: true };
   } catch (error) {

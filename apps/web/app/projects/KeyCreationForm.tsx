@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +16,7 @@ import { createKeyAction } from "./actions"
 import { Copy, Check, WarningCircle } from "@phosphor-icons/react"
 
 export function KeyCreationForm({ projects, preselectedProjectId }: { projects: { id: string, name: string }[], preselectedProjectId?: string }) {
+  const router = useRouter()
   const [projectId, setProjectId] = useState(preselectedProjectId || (projects.length > 0 ? projects[0].id : ""))
   const [name, setName] = useState("")
   const [expiresIn, setExpiresIn] = useState("30")
@@ -68,7 +70,7 @@ export function KeyCreationForm({ projects, preselectedProjectId }: { projects: 
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
-        <Button className="w-full" onClick={() => window.location.reload()}>
+        <Button className="w-full" onClick={() => router.refresh()}>
           Done
         </Button>
       </div>

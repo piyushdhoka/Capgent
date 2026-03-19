@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { cookies } from "next/headers";
 
 export type Project = {
@@ -15,16 +16,27 @@ export type ApiKey = {
   expiresAt: Date | null;
 };
 
-export async function getUserProjects(email: string): Promise<Project[]> {
-  // Note: email is unused now; projects are fetched via the API using the signed session cookie.
-  const apiBase =
+function getApiBase() {
+  return (
     process.env.CAPAGENT_API_BASE_URL ??
     process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ??
-    "http://127.0.0.1:8787";
+    "http://127.0.0.1:8787"
+  );
+}
 
+async function getSessionCookie() {
+  return (await cookies()).get("session")?.value ?? "";
+}
+
+/**
+ * Fetch all projects for the current user.
+ * Wrapped with React.cache() so multiple RSC renders in the same request
+ * (root layout, page) share one API call.
+ */
+export const getUserProjects = cache(async (_email?: string): Promise<Project[]> => {
   try {
-    const session = (await cookies()).get("session")?.value ?? "";
-    const res = await fetch(`${apiBase}/api/me/projects`, {
+    const session = await getSessionCookie();
+    const res = await fetch(`${getApiBase()}/api/me/projects`, {
       cache: "no-store",
       headers: session ? { cookie: `session=${session}` } : {},
     });
@@ -37,29 +49,30 @@ export async function getUserProjects(email: string): Promise<Project[]> {
       createdAt: new Date(p.created_at),
     })) as Project[];
   } catch {
-    // API may not be running locally; don't crash the app shell.
     return [];
   }
-}
+});
 
 export async function getProjectById(projectId: string): Promise<Project | null> {
-  const projects = await getUserProjects("");
-  const found = projects.find((p) => p.id === projectId) ?? null;
-  return found;
+  const projects = await getUserProjects();
+  return projects.find((p) => p.id === projectId) ?? null;
 }
 
-export async function getProjectApiKeys(projectId: string): Promise<ApiKey[]> {
-  const apiBase =
-    process.env.CAPAGENT_API_BASE_URL ??
-    process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ??
-    "http://127.0.0.1:8787";
-
+/**
+ * Fetch API keys for a single project.
+ * Wrapped with React.cache() so repeated calls for the same projectId
+ * within one request (e.g. dashboard + layout) are deduped.
+ */
+export const getProjectApiKeys = cache(async (projectId: string): Promise<ApiKey[]> => {
   try {
-    const session = (await cookies()).get("session")?.value ?? "";
-    const res = await fetch(`${apiBase}/api/me/projects/${encodeURIComponent(projectId)}/keys`, {
-      cache: "no-store",
-      headers: session ? { cookie: `session=${session}` } : {},
-    });
+    const session = await getSessionCookie();
+    const res = await fetch(
+      `${getApiBase()}/api/me/projects/${encodeURIComponent(projectId)}/keys`,
+      {
+        cache: "no-store",
+        headers: session ? { cookie: `session=${session}` } : {},
+      }
+    );
     if (!res.ok) return [];
     const json = (await res.json().catch(() => null)) as { api_keys?: any[] } | null;
     return (json?.api_keys ?? []).map((k) => ({
@@ -72,4 +85,4 @@ export async function getProjectApiKeys(projectId: string): Promise<ApiKey[]> {
   } catch {
     return [];
   }
-}
+});

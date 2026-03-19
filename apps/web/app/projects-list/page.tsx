@@ -11,18 +11,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ProjectsForm } from "@/app/projects/ProjectsForm"
-import { CloudArrowDown, Plus } from "@phosphor-icons/react/dist/ssr"
+import { Plus } from "@phosphor-icons/react/dist/ssr"
 import { ProjectsTableClient } from "./ProjectsTableClient"
 
 export default async function ProjectsListPage() {
-  const user = await getSession()
-  if (!user) {
-    redirect("/login")
-  }
+  // Fetch session and projects in parallel
+  const [user, projects] = await Promise.all([
+    getSession(),
+    getUserProjects(),
+  ])
 
-  const projects = await getUserProjects(user.email)
-  
-  // Fetch key counts for each project
+  if (!user) redirect("/login")
+
+  // Fetch key counts for all projects in parallel
   const projectsWithKeyCount = await Promise.all(
     projects.map(async (p) => {
       const keys = await getProjectApiKeys(p.id)
@@ -47,17 +48,12 @@ export default async function ProjectsListPage() {
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Create a new project</DialogTitle>
-                <DialogDescription>
-                  Give your project a name to get started.
-                </DialogDescription>
+                <DialogDescription>Give your project a name to get started.</DialogDescription>
               </DialogHeader>
               <ProjectsForm />
             </DialogContent>
           </Dialog>
 
-          <Button variant="outline" className="gap-2 rounded-full px-5 h-9">
-            <CloudArrowDown className="h-4 w-4" /> Import projects
-          </Button>
         </div>
       </div>
 

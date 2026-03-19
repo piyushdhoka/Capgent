@@ -240,7 +240,11 @@ export function AppSidebar({ user }: { user?: SidebarUser }) {
                         : "font-normal text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    <Link href={item.href} className="flex items-center gap-2">
+                    <Link
+                      href={item.href}
+                      className="flex items-center gap-2"
+                      aria-label={collapsed ? item.label : undefined}
+                    >
                       <Icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </Link>
@@ -263,7 +267,12 @@ export function AppSidebar({ user }: { user?: SidebarUser }) {
                   variant="ghost"
                   className={cn("h-9 w-full rounded-md justify-start", collapsed ? "justify-center px-0" : "px-2")}
                 >
-                  <a href={item.href} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={collapsed ? item.label : undefined}
+                  >
                     <Icon className="h-4 w-4 shrink-0" />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                   </a>

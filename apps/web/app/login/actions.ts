@@ -1,9 +1,14 @@
 "use server"
 
-import { signIn, signUp } from "@/lib/auth";
+import { signIn, signUp, deleteSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export async function loginAction(formData: FormData) {
+export type AuthState = { error: string | null }
+
+export async function loginAction(
+  _prevState: AuthState | null,
+  formData: FormData
+): Promise<AuthState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
@@ -20,7 +25,10 @@ export async function loginAction(formData: FormData) {
   return { error: result.error || "Invalid credentials" };
 }
 
-export async function signupAction(formData: FormData) {
+export async function signupAction(
+  _prevState: AuthState | null,
+  formData: FormData
+): Promise<AuthState> {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -39,7 +47,6 @@ export async function signupAction(formData: FormData) {
 }
 
 export async function signoutAction() {
-  const { deleteSession } = await import("@/lib/auth");
   await deleteSession();
   redirect("/login");
 }

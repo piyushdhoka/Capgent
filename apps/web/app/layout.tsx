@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { Inter, Instrument_Sans } from "next/font/google"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -89,7 +90,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                     <span className="font-heading text-lg font-bold tracking-tight">Capgent</span>
                   </Link>
 
-                  {user && <ProjectSwitcher projects={projects} />}
+                  {user && (
+                    <Suspense fallback={null}>
+                      <ProjectSwitcher projects={projects} />
+                    </Suspense>
+                  )}
 
                   <nav className="hidden items-center gap-1 md:flex">
                     {NAV_LINKS.map((link) => (

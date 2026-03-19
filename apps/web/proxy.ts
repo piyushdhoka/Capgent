@@ -13,12 +13,11 @@ const PROTECTED_PREFIXES = ["/protected", "/dashboard"];
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Skip if not protected
   if (!PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // 2. Handle /dashboard (Manual Session)
+  // /dashboard — verify session JWT before SSR even starts
   if (pathname.startsWith("/dashboard")) {
     const session = req.cookies.get("session")?.value;
     if (!session) {
@@ -27,12 +26,12 @@ export async function proxy(req: NextRequest) {
     try {
       await jwtVerify(session, JWT_SECRET);
       return NextResponse.next();
-    } catch (err) {
+    } catch {
       return NextResponse.redirect(new URL("/login", req.url));
     }
   }
 
-  // 3. Handle /protected (Legacy/External)
+  // /protected — capagent proof/identity token check
   const token =
     req.cookies.get("capagent_proof")?.value ??
     req.cookies.get("capagent_identity")?.value ??

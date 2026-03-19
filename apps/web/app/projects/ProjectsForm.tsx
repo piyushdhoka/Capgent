@@ -61,7 +61,7 @@ export function ProjectsForm() {
       )}
 
       {state.status === "error" && state.message && (
-        <p className="text-xs text-red-500">{state.message}</p>
+        <p className="text-xs text-destructive">{state.message}</p>
       )}
 
       <p className="mt-2 text-xs text-muted-foreground">

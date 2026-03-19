@@ -9,13 +9,16 @@ import { ArrowRight, Folder, Key, Plus } from "@phosphor-icons/react/dist/ssr"
 import { ProjectsForm } from "@/app/projects/ProjectsForm"
 
 export default async function DashboardPage() {
-  const user = await getSession()
+  // Fetch session and projects in parallel — getUserProjects reads the session
+  // cookie directly so it doesn't need the resolved user object first.
+  const [user, projects] = await Promise.all([
+    getSession(),
+    getUserProjects(),
+  ])
 
-  if (!user) {
-    redirect("/login")
-  }
+  if (!user) redirect("/login")
 
-  const projects = await getUserProjects(user.email)
+  // Fetch all key counts in parallel across projects
   const projectsWithKeyCount = await Promise.all(
     projects.map(async (p) => {
       const keys = await getProjectApiKeys(p.id)
@@ -24,14 +27,14 @@ export default async function DashboardPage() {
   )
 
   const totalKeys = projectsWithKeyCount.reduce((a, x) => a + x.keyCount, 0)
-  const sortedProjects = [...projectsWithKeyCount].sort((a, b) => b.project.createdAt.getTime() - a.project.createdAt.getTime())
+  const sortedProjects = [...projectsWithKeyCount].sort(
+    (a, b) => b.project.createdAt.getTime() - a.project.createdAt.getTime()
+  )
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <Badge variant="secondary" className="w-fit">
-          Workspace
-        </Badge>
+        <Badge variant="secondary" className="w-fit">Workspace</Badge>
         <h1 className="font-heading text-2xl font-semibold tracking-tight">Dashboard overview</h1>
         <p className="text-sm text-muted-foreground">
           {user.name ?? user.email}. Create a project, generate API keys, and protect your backend endpoints.
@@ -71,7 +74,9 @@ export default async function DashboardPage() {
                 <div className="mt-1 text-xs text-muted-foreground">API keys</div>
               </div>
               <div className="rounded-lg border bg-card p-4">
-                <div className="text-2xl font-semibold tabular-nums">{projectsWithKeyCount.filter((x) => x.keyCount > 0).length}</div>
+                <div className="text-2xl font-semibold tabular-nums">
+                  {projectsWithKeyCount.filter((x) => x.keyCount > 0).length}
+                </div>
                 <div className="mt-1 text-xs text-muted-foreground">Active projects</div>
               </div>
             </div>

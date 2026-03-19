@@ -20,15 +20,18 @@ interface ApiKeysPageProps {
 }
 
 export default async function ApiKeysPage(props: ApiKeysPageProps) {
-  const user = await getSession()
-  if (!user) {
-    redirect("/login")
-  }
+  // Fetch session + projects + searchParams in parallel
+  const [user, projects, searchParams] = await Promise.all([
+    getSession(),
+    getUserProjects(),
+    props.searchParams,
+  ])
 
-  const projects = await getUserProjects(user.email)
-  const searchParams = await props.searchParams
+  if (!user) redirect("/login")
+
   const selectedProjectId = searchParams?.project_id?.trim() || undefined
 
+  // Fetch all keys for all projects in parallel
   const allKeysNested = await Promise.all(
     projects.map(async (p) => {
       const keys = await getProjectApiKeys(p.id)
@@ -42,7 +45,9 @@ export default async function ApiKeysPage(props: ApiKeysPageProps) {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">API Keys</h1>
-          <p className="text-sm text-muted-foreground">View keys, group by project, and copy credentials for your backend.</p>
+          <p className="text-sm text-muted-foreground">
+            View keys, group by project, and copy credentials for your backend.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <Button variant="ghost" asChild className="gap-2 text-muted-foreground hover:text-foreground">
