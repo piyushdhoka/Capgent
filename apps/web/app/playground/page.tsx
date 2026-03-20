@@ -40,7 +40,7 @@ async function solveWithLLM(payload: {
 }
 
 export default function PlaygroundPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL || "http://localhost:8787"
+  const baseUrl = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL || "/api/capagent"
   const client = useMemo(
     () =>
       createClient({
