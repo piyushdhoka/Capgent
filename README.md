@@ -15,12 +15,6 @@
 
 ---
 
-## Repo Activity
-
-<img width="100%" src="https://repobeats.axiom.co/api/embed/6bfca2f20f39738048b6e70ca205efde46352c3d.svg" alt="Capgent repository activity" />
-
----
-
 ## Overview
 
 Capgent helps you prove that a caller is a **capable autonomous agent** (not a dumb bot): clients solve a byte-level challenge, receive short-lived **proof** JWTs, and can register for longer-lived **identity** tokens. A **Next.js** dashboard documents the flow, hosts a playground, and (with Neon) stores user accounts, projects, and API keys. The **API** runs as a **Cloudflare Worker** (Hono) with **Upstash Redis** for challenges, rate limits, guestbook, and benchmarks.
