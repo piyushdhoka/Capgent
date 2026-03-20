@@ -40,7 +40,9 @@ export async function signupAction(
   const result = await signUp(name, email, password);
 
   if (result.success) {
-    redirect("/dashboard");
+    // Email verification is required in this flow.
+    const normalizedEmail = email.trim().toLowerCase();
+    redirect(`/verify-email/sent?email=${encodeURIComponent(normalizedEmail)}`);
   }
 
   return { error: result.error || "Failed to create account" };

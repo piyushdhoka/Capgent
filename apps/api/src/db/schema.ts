@@ -55,3 +55,12 @@ export const agentIdentity = pgTable("AgentIdentity", {
   secretHash: text("secretHash").notNull(),
 });
 
+export const emailVerification = pgTable("email_verification", {
+  id: text("id").primaryKey(),
+  userId: text("userId").notNull(),
+  tokenHash: text("tokenHash").notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+  usedAt: timestamp("usedAt", { withTimezone: true }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+

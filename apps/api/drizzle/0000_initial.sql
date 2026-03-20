@@ -66,3 +66,16 @@ CREATE TABLE IF NOT EXISTS "AgentIdentity" (
 
 CREATE INDEX IF NOT EXISTS "AgentIdentity_revokedAt_idx" ON "AgentIdentity" ("revokedAt");
 
+-- Email verification tokens (used for optional emailVerified gating)
+CREATE TABLE IF NOT EXISTS "email_verification" (
+  "id" text PRIMARY KEY,
+  "userId" text NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
+  "tokenHash" text NOT NULL,
+  "expiresAt" timestamptz NOT NULL,
+  "usedAt" timestamptz,
+  "createdAt" timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS "email_verification_userId_idx" ON "email_verification" ("userId");
+CREATE INDEX IF NOT EXISTS "email_verification_expiresAt_idx" ON "email_verification" ("expiresAt");
+

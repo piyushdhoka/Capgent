@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { sql } from "./neon";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import { createEmailVerificationToken } from "./email-verification"
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("❌ [Auth] SESSION_SECRET is not set. Please add it to your .env file.");
@@ -74,6 +75,26 @@ export const getSession = cache(async () => {
 
 const BCRYPT_SALT_ROUNDS = 12;
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase()
+}
+
+function assertValidEmail(email: string) {
+  const normalized = normalizeEmail(email)
+  if (!EMAIL_RE.test(normalized)) {
+    throw new Error("Please enter a valid email address.")
+  }
+  return normalized
+}
+
+function assertValidPassword(password: string) {
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters.")
+  }
+}
+
 async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 }
@@ -84,20 +105,26 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 
 export async function signIn(email: string, password: string) {
   try {
+    const normalizedEmail = normalizeEmail(email)
+
     const users = await sql`
-      SELECT u.id, a.password 
+      SELECT u.id, u."emailVerified", a.password 
       FROM "user" u
       JOIN "account" a ON u.id = a."userId"
-      WHERE u.email = ${email} AND a."providerId" = 'credential'
+      WHERE u.email = ${normalizedEmail} AND a."providerId" = 'credential'
       LIMIT 1
     `;
 
-    const user = users[0] as { id: string; password: string } | undefined;
+    const user = users[0] as { id: string; emailVerified: boolean; password: string } | undefined;
     if (!user) throw new Error("Invalid email or password");
 
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
       throw new Error("Invalid email or password");
+    }
+
+    if (!user.emailVerified) {
+      throw new Error("Please verify your email before signing in.")
     }
 
     await createSession(user.id);
@@ -110,12 +137,15 @@ export async function signIn(email: string, password: string) {
 
 export async function signUp(name: string, email: string, password: string) {
   try {
+    const normalizedEmail = assertValidEmail(email)
+    assertValidPassword(password)
+
     const userId = crypto.randomUUID();
     const now = new Date();
 
     await sql`
       INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt")
-      VALUES (${userId}, ${name}, ${email}, false, ${now}, ${now})
+      VALUES (${userId}, ${name}, ${normalizedEmail}, false, ${now}, ${now})
     `;
 
     const accountId = crypto.randomUUID();
@@ -124,10 +154,17 @@ export async function signUp(name: string, email: string, password: string) {
       VALUES (${accountId}, ${userId}, ${userId}, 'credential', ${await hashPassword(password)}, ${now}, ${now})
     `;
 
-    await createSession(userId);
-    return { success: true };
+    await createEmailVerificationToken({ userId, email: normalizedEmail })
+
+    // No session until the user verifies their email.
+    return { success: true, verificationRequired: true };
   } catch (error) {
     console.error("❌ [Auth] Sign-up failed:", error);
-    return { success: false, error: (error as Error).message };
+    // Avoid leaking whether an account exists.
+    const message = (error as Error).message ?? ""
+    if (message.toLowerCase().includes("unique") || message.toLowerCase().includes("duplicate")) {
+      return { success: false, error: "Unable to create account. If this email already exists, verify it first." }
+    }
+    return { success: false, error: message || "Failed to create account" };
   }
 }
