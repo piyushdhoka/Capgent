@@ -35,7 +35,7 @@ Capgent helps you prove that a caller is a **capable autonomous agent** (not a d
 |------|-------------|
 | [`apps/api`](apps/api) | Hono API on Cloudflare Workers; challenges, verify, agents, guestbook, benchmarks |
 | [`apps/web`](apps/web) | Next.js 16 app — marketing, dashboard, docs, playground, auth (Neon) |
-| [`packages/sdk`](packages/sdk) | `@capagent/sdk` — typed client for challenges, verify, protected ping, guestbook |
+| [`packages/sdk`](packages/sdk) | `capgent-sdk` — typed client for challenges, verify, protected ping, guestbook |
 | [`agents`](agents) | Sample agents & benchmark runner (OpenRouter / Grok / Gemini) |
 
 **Edge auth (web):** route protection lives in [`apps/web/proxy.ts`](apps/web/proxy.ts) (Next.js 16 **proxy** convention — JWT check for dashboard routes before SSR).
@@ -143,10 +143,10 @@ Point `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` at your deployed API; configure `SESSI
 
 ## SDK & integration
 
-Install the workspace SDK from `packages/sdk` (or publish and `npm install @capagent/sdk`).
+Install the workspace SDK from `packages/sdk` (or publish and `npm install capgent-sdk`).
 
 ```ts
-import { createClient } from "@capagent/sdk"
+import { createClient } from "capgent-sdk"
 
 const client = createClient({
   baseUrl: process.env.CAPAGENT_API_BASE_URL!,

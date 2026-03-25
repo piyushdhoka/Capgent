@@ -1,6 +1,6 @@
-import { createClient } from "@capagent/sdk"
-import { parseCanonicalStepsFromInstructions } from "@capagent/sdk/parser/heuristic"
-import { solveChallengeFromSteps } from "@capagent/sdk/solver"
+import { createClient } from "capgent-sdk"
+import { parseCanonicalStepsFromInstructions } from "capgent-sdk/parser/heuristic"
+import { solveChallengeFromSteps } from "capgent-sdk/solver"
 
 function mustEnv(name: string): string {
   const v = (process.env[name] ?? "").trim()

@@ -24,7 +24,7 @@ const GROUPS: FooterGroup[] = [
     links: [
       { href: "/docs", label: "Docs" },
       { href: "/projects", label: "Projects" },
-      { href: "https://www.npmjs.com/package/@capagent/sdk", label: "SDK (npm)", external: true },
+      { href: "https://www.npmjs.com/package/capgent-sdk", label: "SDK (npm)", external: true },
       { href: "https://github.com", label: "GitHub", external: true },
     ],
   },

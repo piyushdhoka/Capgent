@@ -1,8 +1,11 @@
 {
-  "name": "@capagent/sdk",
-  "version": "0.0.0",
-  "private": true,
+  "name": "capgent-sdk",
+  "version": "0.0.3",
+  "private": false,
   "type": "module",
+  "files": [
+    "dist/**/*"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "sideEffects": false,

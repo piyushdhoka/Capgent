@@ -1,4 +1,4 @@
-import { solveChallengeFromSteps } from "@capagent/sdk/solver";
+import { solveChallengeFromSteps } from "capgent-sdk/solver";
 
 const MODELS = [
   { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash" },

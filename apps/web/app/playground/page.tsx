@@ -1,7 +1,7 @@
 "use client"
 
-import { createClient } from "@capagent/sdk"
-import { solveChallengeFromSteps } from "@capagent/sdk/solver"
+import { createClient } from "capgent-sdk"
+import { solveChallengeFromSteps } from "capgent-sdk/solver"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"

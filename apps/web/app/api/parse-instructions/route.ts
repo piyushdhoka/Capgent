@@ -1,4 +1,4 @@
-import { parseStepsWithOpenRouter } from "@capagent/sdk/parser/llm-openrouter";
+import { parseStepsWithOpenRouter } from "capgent-sdk/parser/llm-openrouter";
 import { NextResponse } from "next/server";
 
 /**

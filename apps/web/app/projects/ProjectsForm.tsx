@@ -67,7 +67,7 @@ export function ProjectsForm() {
       <p className="mt-2 text-xs text-muted-foreground">
         After creating a project, use the API key as{" "}
         <code className="mx-1 rounded bg-muted px-1 py-0.5 text-[0.7rem]">X-Capgent-Api-Key</code> in your backend
-        requests or configure it in the <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">@capagent/sdk</code>{" "}
+        requests or configure it in the <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">capgent-sdk</code>{" "}
         client.
       </p>
     </div>

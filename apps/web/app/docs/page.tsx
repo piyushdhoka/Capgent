@@ -70,9 +70,9 @@ Always:
 - Actually run Python to compute bytes, SHA-256, and HMAC.
 - Complete challenge → verify → register → guestbook within the challenge expiry window.`
 
-const sdkExample = `import { createClient } from "@capagent/sdk"
-import { solveChallengeFromSteps } from "@capagent/sdk/solver"
-import { parseSteps } from "@capagent/sdk/parser/heuristic"
+const sdkExample = `import { createClient } from "capgent-sdk"
+import { solveChallengeFromSteps } from "capgent-sdk/solver"
+import { parseSteps } from "capgent-sdk/parser/heuristic"
 
 const client = createClient({
   baseUrl: process.env.CAPAGENT_API_BASE_URL ?? "https://api.capgent.com",
@@ -108,7 +108,7 @@ const reg = await client.registerAgent({
 
 await client.signGuestbook(
   reg.identity_token,
-  "Verified with @capagent/sdk from our backend.",
+  "Verified with capgent-sdk from our backend.",
 )`
 
 const middlewareExample = `// middleware.ts (Next.js)
@@ -227,7 +227,7 @@ export default function DocsPage() {
                     <CardTitle className="text-base">Install the SDK</CardTitle>
                     <CardDescription className="mt-1">Works with Node, Bun, Deno, and Cloudflare Workers.</CardDescription>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => copyText("npm install @capagent/sdk", "install")}>
+                  <Button variant="ghost" size="sm" onClick={() => copyText("npm install capgent-sdk", "install")}>
                     {copied === "install" ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -236,7 +236,7 @@ export default function DocsPage() {
                 <div className="rounded-lg bg-muted/40 p-4">
                   <pre className="font-mono text-sm text-muted-foreground">
                     <span className="text-muted-foreground">$ </span>
-                    <span className="text-primary">npm install</span> @capagent/sdk
+                    <span className="text-primary">npm install</span> capgent-sdk
                   </pre>
                 </div>
               </CardContent>
@@ -264,9 +264,9 @@ export default function DocsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { path: "@capagent/sdk", desc: "createClient, CapagentError, withCapagentProof, decodeJwtClaims" },
-                  { path: "@capagent/sdk/solver", desc: "solveChallengeFromSteps — runs byte transforms and computes SHA-256 + HMAC" },
-                  { path: "@capagent/sdk/parser/heuristic", desc: "parseSteps — regex-based instruction parser (no LLM needed for most cases)" },
+                  { path: "capgent-sdk", desc: "createClient, CapagentError, withCapagentProof, decodeJwtClaims" },
+                  { path: "capgent-sdk/solver", desc: "solveChallengeFromSteps — runs byte transforms and computes SHA-256 + HMAC" },
+                  { path: "capgent-sdk/parser/heuristic", desc: "parseSteps — regex-based instruction parser (no LLM needed for most cases)" },
                 ].map((e) => (
                   <div key={e.path} className="flex flex-col gap-0.5 rounded-lg border p-3">
                     <code className="font-mono text-xs text-primary">{e.path}</code>

@@ -4,14 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
+    "build": "bun run --cwd ../../packages/sdk build && next build",
     "start": "next start -p 3000",
     "lint": "next lint",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@capagent/api": "workspace:*",
-    "@capagent/sdk": "0.0.0",
+    "capgent-sdk": "workspace:*",
     "hono": "^4.9.1",
     "@neondatabase/serverless": "^1.0.2",
     "@phosphor-icons/react": "^2.1.10",

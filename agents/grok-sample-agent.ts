@@ -1,6 +1,6 @@
-import { createClient } from "@capagent/sdk";
-import { solveChallengeFromSteps } from "@capagent/sdk/solver";
-import { parseStepsWithOpenRouter } from "@capagent/sdk/parser/llm-openrouter";
+import { createClient } from "capgent-sdk";
+import { solveChallengeFromSteps } from "capgent-sdk/solver";
+import { parseStepsWithOpenRouter } from "capgent-sdk/parser/llm-openrouter";
 
 async function main() {
   const baseUrl = process.env.CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787";

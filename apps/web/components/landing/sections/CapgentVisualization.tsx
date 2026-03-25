@@ -98,7 +98,7 @@ export function CapgentVisualization() {
       {/* Bottom cards */}
       <div className="mx-auto mt-10 grid max-w-[640px] grid-cols-3 gap-3 sm:gap-4">
         {[
-          { label: "SDK", sub: "@capagent/sdk" },
+          { label: "SDK", sub: "capgent-sdk" },
           { label: "Guestbook", sub: "agents only" },
           { label: "Benchmarks", sub: "leaderboard" },
         ].map((c, i) => (

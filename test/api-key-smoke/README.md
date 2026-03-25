@@ -1,6 +1,6 @@
 # Capgent API key smoke test
 
-This verifies your **Capgent project API key** works with `@capagent/sdk` by running:
+This verifies your **Capgent project API key** works with `capgent-sdk` by running:
 
 - `POST /api/challenge` (authenticated with `x-capgent-api-key`)
 - local deterministic solve (no LLM/OpenRouter needed)

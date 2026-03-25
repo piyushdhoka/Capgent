@@ -7,9 +7,9 @@
     "apps/api": {
       "name": "@capagent/api",
       "dependencies": {
-        "@capagent/sdk": "0.0.0",
         "@neondatabase/serverless": "^1.0.2",
         "@upstash/redis": "^1.35.3",
+        "capgent-sdk": "0.0.3",
         "drizzle-orm": "^0.44.4",
         "hono": "^4.9.1",
         "jose": "^6.1.0",
@@ -24,7 +24,7 @@
     "apps/web": {
       "name": "@capagent/web",
       "dependencies": {
-        "@capagent/sdk": "0.0.0",
+        "@capagent/api": "workspace:*",
         "@neondatabase/serverless": "^1.0.2",
         "@phosphor-icons/react": "^2.1.10",
         "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -37,10 +37,12 @@
         "@radix-ui/react-tabs": "^1.1.13",
         "@tabler/icons-react": "^3.40.0",
         "bcryptjs": "^3.0.3",
+        "capgent-sdk": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "dotenv": "^17.3.1",
+        "hono": "^4.9.1",
         "jose": "^6.2.1",
         "motion": "^12.35.0",
         "next": "^16.1.7",
@@ -69,8 +71,8 @@
       },
     },
     "packages/sdk": {
-      "name": "@capagent/sdk",
-      "version": "0.0.0",
+      "name": "capgent-sdk",
+      "version": "0.0.3",
     },
   },
   "packages": {
@@ -109,8 +111,6 @@
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
     "@capagent/api": ["@capagent/api@workspace:apps/api"],
-
-    "@capagent/sdk": ["@capagent/sdk@workspace:packages/sdk"],
 
     "@capagent/web": ["@capagent/web@workspace:apps/web"],
 
@@ -571,6 +571,8 @@
     "camelcase-css": ["camelcase-css@2.0.1", "", {}, "sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA=="],
 
     "caniuse-lite": ["caniuse-lite@1.0.30001777", "", {}, "sha512-tmN+fJxroPndC74efCdp12j+0rk0RHwV5Jwa1zWaFVyw2ZxAuPeG8ZgWC3Wz7uSjT3qMRQ5XHZ4COgQmsCMJAQ=="],
+
+    "capgent-sdk": ["capgent-sdk@workspace:packages/sdk"],
 
     "chalk": ["chalk@4.1.2", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="],
 

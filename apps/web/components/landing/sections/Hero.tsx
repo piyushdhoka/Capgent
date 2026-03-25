@@ -56,7 +56,7 @@ const TypeScriptLogo = () => (
 export function Hero() {
   const [copied, setCopied] = useState(false)
 
-  const cmd = "npm install @capagent/sdk"
+  const cmd = "npm install capgent-sdk"
 
   async function onCopy() {
     try {
