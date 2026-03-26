@@ -11,16 +11,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { KeyCreationForm } from "./KeyCreationForm"
-import { FileText, Key } from "@phosphor-icons/react/dist/ssr"
+import { ProjectsForm } from "./ProjectsForm"
+import { FileText, Key, Plus } from "@phosphor-icons/react/dist/ssr"
 import Link from "next/link"
-import { ApiKeysClient } from "./ApiKeysClient"
+import { UnifiedProjectsClient } from "@/app/projects/UnifiedProjectsClient"
 
-interface ApiKeysPageProps {
-  searchParams: Promise<{ project_id?: string }>
+interface ProjectsPageProps {
+  searchParams: Promise<{ project_id?: string; tab?: string }>
 }
 
-export default async function ApiKeysPage(props: ApiKeysPageProps) {
-  // Fetch session + projects + searchParams in parallel
+export default async function ProjectsPage(props: ProjectsPageProps) {
   const [user, projects, searchParams] = await Promise.all([
     getSession(),
     getUserProjects(),
@@ -30,8 +30,8 @@ export default async function ApiKeysPage(props: ApiKeysPageProps) {
   if (!user) redirect("/login")
 
   const selectedProjectId = searchParams?.project_id?.trim() || undefined
+  const initialTab = searchParams?.tab === "keys" ? "keys" : "projects"
 
-  // Fetch all keys for all projects in parallel
   const allKeysNested = await Promise.all(
     projects.map(async (p) => {
       const keys = await getProjectApiKeys(p.id)
@@ -40,21 +40,40 @@ export default async function ApiKeysPage(props: ApiKeysPageProps) {
   )
   const allKeys = allKeysNested.flat().sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
+  const projectsWithKeyCount = projects.map((p) => ({
+    ...p,
+    keyCount: allKeys.filter((k) => k.project.id === p.id).length,
+  }))
+
   return (
     <div className="flex flex-col gap-6 w-full">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight">API Keys</h1>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight">Projects & Keys</h1>
           <p className="text-sm text-muted-foreground">
-            View keys, group by project, and copy credentials for your backend.
+            Manage your projects and API keys in one place.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <Button variant="ghost" asChild className="gap-2 text-muted-foreground hover:text-foreground">
             <Link href="/docs">
-              <FileText className="h-4 w-4" /> API quickstart
+              <FileText className="h-4 w-4" /> Docs
             </Link>
           </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 h-9">
+                <Plus className="h-4 w-4" /> New project
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Create a new project</DialogTitle>
+                <DialogDescription>Give your project a name to get started.</DialogDescription>
+              </DialogHeader>
+              <ProjectsForm />
+            </DialogContent>
+          </Dialog>
           <Dialog>
             <DialogTrigger asChild>
               <Button className="gap-2 rounded-full px-5 h-9 shadow-sm">
@@ -74,7 +93,13 @@ export default async function ApiKeysPage(props: ApiKeysPageProps) {
         </div>
       </div>
 
-      <ApiKeysClient allKeys={allKeys} projects={projects} initialProjectId={selectedProjectId} />
+      <UnifiedProjectsClient
+        projects={projectsWithKeyCount}
+        allKeys={allKeys}
+        allProjects={projects}
+        initialProjectId={selectedProjectId}
+        initialTab={initialTab}
+      />
     </div>
   )
 }

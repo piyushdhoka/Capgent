@@ -85,7 +85,7 @@ const FOOTER_DEV = [
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await getSession()
-  const projects = user ? await getUserProjects(user.email) : []
+  const projects = user ? await getUserProjects() : []
 
   return (
     <html lang="en" className={cn(fontHeading.variable, fontSans.variable)} suppressHydrationWarning>

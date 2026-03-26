@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import { SiteFooter } from "@/components/layout/SiteFooter"
 
-const HIDE_FOOTER_PREFIXES = ["/dashboard", "/projects", "/projects-list"]
+const HIDE_FOOTER_PREFIXES = ["/dashboard", "/projects"]
 
 export function FooterGate() {
   const pathname = usePathname() || "/"

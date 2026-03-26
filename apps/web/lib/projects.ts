@@ -33,7 +33,7 @@ async function getSessionCookie() {
  * Wrapped with React.cache() so multiple RSC renders in the same request
  * (root layout, page) share one API call.
  */
-export const getUserProjects = cache(async (_email?: string): Promise<Project[]> => {
+export const getUserProjects = cache(async (): Promise<Project[]> => {
   try {
     const session = await getSessionCookie();
     const res = await fetch(`${getApiBase()}/api/me/projects`, {

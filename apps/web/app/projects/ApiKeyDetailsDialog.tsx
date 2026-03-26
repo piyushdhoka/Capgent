@@ -25,6 +25,13 @@ import {
 import { Check, Copy } from "@phosphor-icons/react"
 import { deleteKeyAction } from "./actions"
 
+/** Public API origin (Vercel `NEXT_PUBLIC_CAPAGENT_API_BASE_URL`) — no trailing slash. */
+function getCapagentApiBaseUrl(): string {
+  return String(process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "")
+    .trim()
+    .replace(/\/+$/, "")
+}
+
 export function ApiKeyDetailsDialog({
   apiKey,
   children,
@@ -56,7 +63,12 @@ export function ApiKeyDetailsDialog({
     })
   }
 
-  const curlCommand = `curl -H "Authorization: Bearer ${apiKey.id}" https://api.capgent.com/v1/endpoint`
+  const apiBase = getCapagentApiBaseUrl()
+  const pingUrl = apiBase ? `${apiBase}/api/protected/ping` : ""
+  // GET /api/protected/ping with project API key (same as dashboard “protected” demo).
+  const curlCommand = pingUrl
+    ? `curl -sS -H "X-Capgent-Api-Key: ${apiKey.id}" "${pingUrl}"`
+    : ""
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -100,12 +112,12 @@ export function ApiKeyDetailsDialog({
           <div className="flex flex-col gap-2">
             <span className="text-[13px] text-muted-foreground">Project name</span>
             <div className="flex items-center justify-between group">
-              <span className="text-[15px] font-medium text-foreground">projects/{apiKey.project.id}</span>
+              <span className="text-[15px] font-medium text-foreground">{apiKey.project.name}</span>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-60 group-hover:opacity-100"
-                onClick={() => copyToClipboard(`projects/${apiKey.project.id}`, setCopiedProjectName)}
+                onClick={() => copyToClipboard(apiKey.project.name, setCopiedProjectName)}
               >
                 {copiedProjectName ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
@@ -165,7 +177,13 @@ export function ApiKeyDetailsDialog({
             <Button
               variant="ghost"
               className="hover:bg-transparent font-medium text-[15px] px-0"
-              onClick={() => copyToClipboard(curlCommand, setCopiedCurl)}
+              disabled={!curlCommand}
+              title={
+                curlCommand
+                  ? undefined
+                  : "Set NEXT_PUBLIC_CAPAGENT_API_BASE_URL to your Capgent API origin (e.g. https://your-worker.workers.dev)."
+              }
+              onClick={() => curlCommand && copyToClipboard(curlCommand, setCopiedCurl)}
             >
               {copiedCurl ? "Copied!" : "Copy cURL quickstart"}
             </Button>

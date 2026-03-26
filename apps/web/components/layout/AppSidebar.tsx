@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { ArrowSquareOut, CaretLeft, CaretRight, Folder, House, Key, List, SignOut } from "@phosphor-icons/react"
+import { BookOpen, CaretLeft, CaretRight, Folder, House, List, Play, SignOut } from "@phosphor-icons/react"
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { signoutAction } from "@/app/login/actions"
 
@@ -14,11 +14,13 @@ const STORAGE_KEY = "capagent_dashboard_sidebar_collapsed"
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: House },
-  { href: "/projects-list", label: "Projects", icon: Folder },
-  { href: "/projects", label: "API keys", icon: Key },
+  { href: "/projects", label: "Projects & Keys", icon: Folder },
 ]
 
-const EXTERNAL_ITEMS = [{ href: "https://changelog.capgent.com", label: "Changelog", icon: ArrowSquareOut }]
+const QUICK_LINKS = [
+  { href: "/docs", label: "Docs", icon: BookOpen },
+  { href: "/playground", label: "Playground", icon: Play },
+]
 
 type SidebarUser = {
   name?: string | null
@@ -143,15 +145,15 @@ export function AppSidebar({ user }: { user?: SidebarUser }) {
               </nav>
               <Separator />
               <div className="px-2 py-3">
-                {EXTERNAL_ITEMS.map((item) => {
+                {QUICK_LINKS.map((item) => {
                   const Icon = item.icon
                   return (
                     <SheetClose asChild key={item.href}>
                       <Button asChild size="sm" variant="ghost" className="h-9 w-full justify-start gap-2 rounded-md px-2">
-                        <a href={item.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                        <Link href={item.href} className="flex items-center gap-2">
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="truncate">{item.label}</span>
-                        </a>
+                        </Link>
                       </Button>
                     </SheetClose>
                   )
@@ -256,26 +258,31 @@ export function AppSidebar({ user }: { user?: SidebarUser }) {
 
           <Separator />
 
-          <div className={cn("px-2 py-3", collapsed && "px-1")}>
-            {EXTERNAL_ITEMS.map((item) => {
+          <div className={cn("px-2 py-3 space-y-1", collapsed && "px-1")}>
+            {QUICK_LINKS.map((item) => {
               const Icon = item.icon
+              const active = isActive(item.href)
               return (
                 <Button
                   key={item.href}
                   asChild
                   size="sm"
-                  variant="ghost"
-                  className={cn("h-9 w-full rounded-md justify-start", collapsed ? "justify-center px-0" : "px-2")}
+                  variant={active ? "secondary" : "ghost"}
+                  className={cn(
+                    "h-9 w-full rounded-md",
+                    collapsed ? "justify-center px-0" : "justify-start px-2",
+                    active
+                      ? "font-medium text-foreground"
+                      : "font-normal text-muted-foreground hover:text-foreground"
+                  )}
                 >
-                  <a
+                  <Link
                     href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     aria-label={collapsed ? item.label : undefined}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     {!collapsed && <span className="truncate">{item.label}</span>}
-                  </a>
+                  </Link>
                 </Button>
               )
             })}
