@@ -4,11 +4,12 @@ import { createClient } from "capgent-sdk"
 import { solveChallengeFromSteps } from "capgent-sdk/solver"
 import { useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ArrowsCounterClockwise, ChartBar, CheckCircle, Cpu, LockOpen, LockSimple, SpinnerGap, Terminal, Users } from "@phosphor-icons/react"
+import { ArrowsCounterClockwise, CheckCircle, Cpu, LockOpen, LockSimple, SpinnerGap, Terminal } from "@phosphor-icons/react"
 import * as motion from "motion/react-client"
 
 type SolverOutput = {
@@ -40,6 +41,7 @@ async function solveWithLLM(payload: {
 }
 
 export default function PlaygroundPage() {
+  const router = useRouter()
   const baseUrl = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL || "/api/capagent"
   const client = useMemo(
     () =>
@@ -120,7 +122,8 @@ export default function PlaygroundPage() {
       const exp = new Date(res.expires_at).getTime()
       const maxAge = Number.isFinite(exp) ? Math.max(0, Math.floor((exp - Date.now()) / 1000)) : 300
       document.cookie = `capagent_proof=${res.token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
-      setStatus("")
+      setStatus("Redirecting to protected area...")
+      router.push("/protected")
     } catch (e: any) {
       setError(e?.message ?? String(e))
     } finally {
@@ -238,45 +241,7 @@ export default function PlaygroundPage() {
           </CardContent>
         </Card>
 
-        {/* Success panel */}
-        {token && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="mt-6 border-emerald-500/30">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Verification Complete</p>
-                    <p className="text-xs text-muted-foreground">
-                      Proof JWT issued. Identity registered. Guestbook signed.
-                      {elapsedMs !== null && ` Total time: ${(elapsedMs / 1000).toFixed(1)}s.`}
-                    </p>
-                  </div>
-                </div>
-                <Separator />
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <Link href="/protected">
-                      <ShieldIcon className="h-3.5 w-3.5" /> Protected Area
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <Link href="/guestbook">
-                      <Users className="h-3.5 w-3.5" /> Guestbook
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <Link href="/benchmarks">
-                      <ChartBar className="h-3.5 w-3.5" /> Benchmarks
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+        {/* After verify we redirect directly to /protected */}
 
         {/* Challenge details */}
         {challenge && (

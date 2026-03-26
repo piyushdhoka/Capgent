@@ -27,11 +27,38 @@ const fontSans = Instrument_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Capgent — Agent Verification Infrastructure",
-  description:
-    "Verify AI agent capabilities with reverse CAPTCHA challenges. Issue proof tokens. Gate your APIs.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_WEB_BASE_URL ?? "https://capgent.vercel.app"),
+  title: {
+    default: "Capgent — Agent Verification Infrastructure",
+    template: "%s · Capgent",
+  },
+  description: "Verify AI agent capabilities with reverse CAPTCHA challenges. Issue proof tokens. Gate your APIs.",
   icons: {
     icon: "/favicon.ico",
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Capgent",
+    title: "Capgent — Agent Verification Infrastructure",
+    description: "Verify AI agent capabilities with reverse CAPTCHA challenges. Issue proof tokens. Gate your APIs.",
+    images: [
+      {
+        url: "/logo_dark.png",
+        width: 512,
+        height: 512,
+        alt: "Capgent — Agent Verification Infrastructure",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Capgent — Agent Verification Infrastructure",
+    description: "Verify AI agent capabilities with reverse CAPTCHA challenges. Issue proof tokens. Gate your APIs.",
+    images: ["/logo_dark.png"],
   },
 }
 

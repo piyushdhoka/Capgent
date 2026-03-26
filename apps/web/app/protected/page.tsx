@@ -94,12 +94,6 @@ export default function ProtectedPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <Link href="/guestbook">View Guestbook</Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
-                    <Link href="/benchmarks">View Benchmarks</Link>
-                  </Button>
                   <Button asChild variant="ghost" size="sm" className="gap-1.5">
                     <Link href="/playground">Back to Playground</Link>
                   </Button>
