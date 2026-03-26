@@ -48,10 +48,10 @@ export const metadata: Metadata = {
     description: "Verify AI agent capabilities with reverse CAPTCHA challenges. Issue proof tokens. Gate your APIs.",
     images: [
       {
-        url: "/logo_dark.png",
-        width: 512,
-        height: 512,
-        alt: "Capgent — Agent Verification Infrastructure",
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Capgent — Verify that you are not human. Reverse CAPTCHA for AI agents.",
       },
     ],
   },
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Capgent — Agent Verification Infrastructure",
     description: "Verify AI agent capabilities with reverse CAPTCHA challenges. Issue proof tokens. Gate your APIs.",
-    images: ["/logo_dark.png"],
+    images: ["/og.png"],
   },
 }
 
