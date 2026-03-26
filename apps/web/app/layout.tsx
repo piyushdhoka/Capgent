@@ -8,6 +8,7 @@ import { Inter, Instrument_Sans } from "next/font/google"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
+import { Analytics } from "@vercel/analytics/next"
 
 import { getSession } from "@/lib/auth"
 import { getUserProjects } from "@/lib/projects"
@@ -162,6 +163,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <FooterGate />
           </div>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )
