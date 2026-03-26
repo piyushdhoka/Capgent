@@ -10,7 +10,7 @@ CAPAGENT_IDENTITY_TTL_SECONDS = "86400"
 
 CAPAGENT_PUBLIC_BASE_URL = "https://YOUR-WORKER-URL"
 
-CAPAGENT_CORS_ORIGINS = "https://capgent.vercel.app"
+CAPAGENT_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,https://capgent.vercel.app"
 
 CAPAGENT_ALLOW_PUBLIC_REGISTRATION = "1"
 
