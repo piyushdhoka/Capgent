@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "capgent",
@@ -10,7 +9,7 @@
       "dependencies": {
         "@neondatabase/serverless": "^1.0.2",
         "@upstash/redis": "^1.35.3",
-        "capgent-sdk": "0.0.3",
+        "capgent-sdk": "workspace:*",
         "drizzle-orm": "^0.44.4",
         "hono": "^4.9.1",
         "jose": "^6.1.0",
@@ -74,7 +73,7 @@
     },
     "packages/sdk": {
       "name": "capgent-sdk",
-      "version": "0.0.3",
+      "version": "1.0.0",
     },
   },
   "packages": {

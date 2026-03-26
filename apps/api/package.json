@@ -12,7 +12,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "capgent-sdk": "0.0.3",
+    "capgent-sdk": "workspace:*",
     "@neondatabase/serverless": "^1.0.2",
     "@upstash/redis": "^1.35.3",
     "drizzle-orm": "^0.44.4",
