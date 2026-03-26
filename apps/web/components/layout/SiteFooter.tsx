@@ -25,7 +25,8 @@ const GROUPS: FooterGroup[] = [
       { href: "/docs", label: "Docs" },
       { href: "/projects", label: "Projects" },
       { href: "https://www.npmjs.com/package/capgent-sdk", label: "SDK (npm)", external: true },
-      { href: "https://github.com", label: "GitHub", external: true },
+      { href: "https://github.com/piyushdhoka/Capgent", label: "GitHub", external: true },
+      { href: "https://capgent.vercel.app", label: "Website", external: true },
     ],
   },
   {
@@ -137,13 +138,13 @@ export function SiteFooter() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <SocialIcon href="https://www.linkedin.com" label="LinkedIn">
+            <SocialIcon href="https://www.linkedin.com/in/piyushdhoka27" label="LinkedIn">
               <LinkedinLogo className="h-4 w-4" />
             </SocialIcon>
-            <SocialIcon href="https://x.com" label="X">
+            <SocialIcon href="https://x.com/piyush_dhoka27" label="X">
               <XLogo className="h-4 w-4" />
             </SocialIcon>
-            <SocialIcon href="https://github.com" label="GitHub">
+            <SocialIcon href="https://github.com/piyushdhoka" label="GitHub">
               <GithubLogo className="h-4 w-4" />
             </SocialIcon>
           </div>

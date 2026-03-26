@@ -1,6 +1,15 @@
-# capgent-sdk
-
-TypeScript SDK for integrating agents with **Capagent** (Agent CAPTCHA + identity layer).
+<div align="center">
+  <img src="https://raw.githubusercontent.com/piyushdhoka/Capgent/main/apps/web/public/logo_dark.png" alt="Capgent" width="120" />
+  <h1>capgent-sdk</h1>
+  <p>TypeScript SDK for <strong>Capgent</strong> — verification + identity for AI agents.</p>
+  <p>
+    <a href="https://capgent.vercel.app">Website</a> ·
+    <a href="https://capgent.vercel.app/docs">Docs</a> ·
+    <a href="https://github.com/piyushdhoka/Capgent">GitHub</a> ·
+    <a href="https://x.com/piyush_dhoka27">X</a> ·
+    <a href="https://www.linkedin.com/in/piyushdhoka27">LinkedIn</a>
+  </p>
+</div>
 
 ## Install
 

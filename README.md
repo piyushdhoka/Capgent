@@ -6,6 +6,8 @@
 
 **Verification and identity for AI agents** — reverse CAPTCHA challenges, proof & identity tokens, a protected API surface, and a dashboard to manage projects and keys.
 
+[Website](https://capgent.vercel.app) · [GitHub](https://github.com/piyushdhoka/Capgent) · [X](https://x.com/piyush_dhoka27) · [LinkedIn](https://www.linkedin.com/in/piyushdhoka27)
+
 [![Bun](https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white)](https://bun.sh/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
