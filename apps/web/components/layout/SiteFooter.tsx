@@ -3,8 +3,8 @@
 import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { GithubLogo, LinkedinLogo, Moon, Sun, XLogo } from "@phosphor-icons/react"
-import { useEffect, useState } from "react"
+import { GithubLogo, LinkedinLogo, XLogo } from "@phosphor-icons/react"
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 
 type FooterLink = { href: string; label: string; external?: boolean }
 type FooterGroup = { title: string; links: FooterLink[] }
@@ -87,21 +87,6 @@ function SocialIcon({
   )
 }
 
-function ThemeGlyph() {
-  const [isDark, setIsDark] = useState(false)
-
-  useEffect(() => {
-    const el = document.documentElement
-    const sync = () => setIsDark(el.classList.contains("dark"))
-    sync()
-    const obs = new MutationObserver(sync)
-    obs.observe(el, { attributes: true, attributeFilter: ["class"] })
-    return () => obs.disconnect()
-  }, [])
-
-  return isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
-}
-
 export function SiteFooter() {
   return (
     <footer className="border-t border-border/40 bg-background">
@@ -180,29 +165,13 @@ export function SiteFooter() {
 
           {/* Utilities */}
           <div className="flex justify-center gap-2 md:justify-end">
-            <button
-              type="button"
+            <AnimatedThemeToggler
               className={cn(
                 "inline-flex h-9 w-9 items-center justify-center rounded-md",
                 "border border-border/50 bg-background/60 text-muted-foreground",
                 "transition-colors hover:bg-muted hover:text-foreground",
               )}
-              aria-label="Theme indicator"
-            >
-              <ThemeGlyph />
-            </button>
-            <a
-              href="#"
-              className={cn(
-                "inline-flex h-9 w-9 items-center justify-center rounded-md",
-                "border border-border/50 bg-background/60 text-muted-foreground",
-                "transition-colors hover:bg-muted hover:text-foreground",
-              )}
-              aria-label="Status"
-              title="Status"
-            >
-              <span className="text-[11px] font-semibold">↗</span>
-            </a>
+            />
           </div>
         </div>
       </div>
