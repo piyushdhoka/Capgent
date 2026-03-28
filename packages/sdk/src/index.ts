@@ -17,7 +17,7 @@ export type ProofToken = {
   expires_at: string;
 };
 
-export type CapagentClientOptions = {
+export type CapgentClientOptions = {
   baseUrl?: string;
   agentName: string;
   agentVersion?: string;
@@ -50,7 +50,7 @@ export type IssueIdentityTokenResponse = {
   expires_at: string;
 };
 
-export type CapagentErrorCode =
+export type CapgentErrorCode =
   | "challenge_failed"
   | "verify_failed"
   | "protected_ping_failed"
@@ -58,13 +58,13 @@ export type CapagentErrorCode =
   | "identity_token_failed"
   | "guestbook_sign_failed";
 
-export class CapagentError extends Error {
-  readonly code: CapagentErrorCode;
+export class CapgentError extends Error {
+  readonly code: CapgentErrorCode;
   readonly status: number;
   readonly endpoint: string;
   readonly details: unknown;
 
-  constructor(code: CapagentErrorCode, message: string, status: number, endpoint: string, details?: unknown) {
+  constructor(code: CapgentErrorCode, message: string, status: number, endpoint: string, details?: unknown) {
     super(message);
     this.code = code;
     this.status = status;
@@ -73,7 +73,7 @@ export class CapagentError extends Error {
   }
 }
 
-export function withCapagentProof(token: string, init?: RequestInit): RequestInit {
+export function withCapgentProof(token: string, init?: RequestInit): RequestInit {
   const headers = new Headers(init?.headers);
   headers.set("authorization", `Bearer ${token}`);
   return { ...init, headers };
@@ -94,7 +94,7 @@ export function decodeJwtClaims(token: string): Record<string, unknown> {
 async function handleJsonError(
   res: Response,
   endpoint: string,
-  code: CapagentErrorCode
+  code: CapgentErrorCode
 ): Promise<never> {
   let details: unknown = null;
   try {
@@ -109,10 +109,10 @@ async function handleJsonError(
   }
 
   const baseMessage = `${code} (${res.status})`;
-  throw new CapagentError(code, baseMessage, res.status, endpoint, details);
+  throw new CapgentError(code, baseMessage, res.status, endpoint, details);
 }
 
-export function createClient(opts: CapagentClientOptions) {
+export function createClient(opts: CapgentClientOptions) {
   const baseUrl = (opts.baseUrl || "http://localhost:8787").replace(/\/+$/, "");
   const agentVersion = opts.agentVersion || "0.0.0";
 
@@ -159,7 +159,7 @@ export function createClient(opts: CapagentClientOptions) {
     },
     async protectedPing(proofJwt: string) {
       const endpoint = "/api/protected/ping";
-      const res = await fetch(`${baseUrl}${endpoint}`, withCapagentProof(proofJwt));
+      const res = await fetch(`${baseUrl}${endpoint}`, withCapgentProof(proofJwt));
       if (!res.ok) {
         await handleJsonError(res, endpoint, "protected_ping_failed");
       }
@@ -168,7 +168,7 @@ export function createClient(opts: CapagentClientOptions) {
     async registerAgent(req: RegisterAgentRequest): Promise<RegisterAgentResponse> {
       const headers: HeadersInit = { "content-type": "application/json" };
       if (req.adminKey) {
-        (headers as any)["x-capagent-admin-key"] = req.adminKey;
+        (headers as any)["x-capgent-admin-key"] = req.adminKey;
       }
       const endpoint = "/api/agents/register";
       const res = await fetch(`${baseUrl}${endpoint}`, withApiKey({
@@ -219,4 +219,3 @@ export function createClient(opts: CapagentClientOptions) {
     }
   };
 }
-

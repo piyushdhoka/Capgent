@@ -31,10 +31,10 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  // /protected — capagent proof/identity token check
+  // /protected — Capgent proof/identity token check
   const token =
-    req.cookies.get("capagent_proof")?.value ??
-    req.cookies.get("capagent_identity")?.value ??
+    req.cookies.get("capgent_proof")?.value ??
+    req.cookies.get("capgent_identity")?.value ??
     "";
 
   if (!token) {

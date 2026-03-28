@@ -26,7 +26,7 @@ import { Check, Copy } from "@phosphor-icons/react"
 import { deleteKeyAction } from "./actions"
 
 /** Public API origin (Vercel `NEXT_PUBLIC_CAPAGENT_API_BASE_URL`) — no trailing slash. */
-function getCapagentApiBaseUrl(): string {
+function getCapgentApiBaseUrl(): string {
   return String(process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL ?? "")
     .trim()
     .replace(/\/+$/, "")
@@ -63,7 +63,7 @@ export function ApiKeyDetailsDialog({
     })
   }
 
-  const apiBase = getCapagentApiBaseUrl()
+  const apiBase = getCapgentApiBaseUrl()
   const pingUrl = apiBase ? `${apiBase}/api/protected/ping` : ""
   // GET /api/protected/ping with project API key (same as dashboard “protected” demo).
   const curlCommand = pingUrl

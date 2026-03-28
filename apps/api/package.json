@@ -1,5 +1,5 @@
 {
-  "name": "@capagent/api",
+  "name": "@capgent/api",
   "private": true,
   "type": "module",
   "scripts": {

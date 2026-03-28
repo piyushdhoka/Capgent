@@ -2,14 +2,14 @@ import { SignJWT, jwtVerify } from "jose";
 import type { Env } from "../config";
 
 export type ProofClaims = {
-  typ: "capagent_proof";
+  typ: "capgent_proof";
   challenge_id: string;
   agent_name: string;
   agent_version: string;
 };
 
 export type AgentIdentityClaims = {
-  typ: "capagent_identity";
+  typ: "capgent_identity";
   agent_id: string;
   agent_name: string;
   framework?: string;
@@ -35,8 +35,8 @@ export async function signProofJwt(env: Env, claims: ProofClaims, ttlSeconds: nu
     .setIssuedAt(iat)
     .setExpirationTime(exp)
     .setSubject(claims.agent_name)
-    .setAudience(env.CAPAGENT_PUBLIC_BASE_URL ?? "capagent")
-    .setIssuer("capagent")
+    .setAudience(env.CAPAGENT_PUBLIC_BASE_URL ?? "capgent")
+    .setIssuer("capgent")
     .sign(getKey(env));
 
   return { jwt, exp };
@@ -44,8 +44,8 @@ export async function signProofJwt(env: Env, claims: ProofClaims, ttlSeconds: nu
 
 export async function verifyProofJwt(env: Env, token: string) {
   const { payload } = await jwtVerify(token, getKey(env), {
-    issuer: "capagent",
-    audience: env.CAPAGENT_PUBLIC_BASE_URL ?? "capagent"
+    issuer: "capgent",
+    audience: env.CAPAGENT_PUBLIC_BASE_URL ?? "capgent"
   });
   return payload as any;
 }
@@ -58,8 +58,8 @@ export async function signIdentityJwt(env: Env, claims: AgentIdentityClaims, ttl
     .setIssuedAt(iat)
     .setExpirationTime(exp)
     .setSubject(claims.agent_id)
-    .setAudience(env.CAPAGENT_PUBLIC_BASE_URL ?? "capagent")
-    .setIssuer("capagent")
+    .setAudience(env.CAPAGENT_PUBLIC_BASE_URL ?? "capgent")
+    .setIssuer("capgent")
     .sign(getKey(env));
 
   return { jwt, exp };
@@ -67,13 +67,11 @@ export async function signIdentityJwt(env: Env, claims: AgentIdentityClaims, ttl
 
 export async function verifyIdentityJwt(env: Env, token: string) {
   const { payload } = await jwtVerify(token, getKey(env), {
-    issuer: "capagent",
-    audience: env.CAPAGENT_PUBLIC_BASE_URL ?? "capagent"
+    issuer: "capgent",
+    audience: env.CAPAGENT_PUBLIC_BASE_URL ?? "capgent"
   });
-  if (payload.typ !== "capagent_identity") {
+  if (payload.typ !== "capgent_identity") {
     throw new Error("invalid_identity_token_type");
   }
   return payload as any;
 }
-
-

@@ -5,7 +5,7 @@
       "name": "capgent",
     },
     "apps/api": {
-      "name": "@capagent/api",
+      "name": "@capgent/api",
       "dependencies": {
         "@neondatabase/serverless": "^1.0.2",
         "@upstash/redis": "^1.35.3",
@@ -22,9 +22,9 @@
       },
     },
     "apps/web": {
-      "name": "@capagent/web",
+      "name": "@capgent/web",
       "dependencies": {
-        "@capagent/api": "workspace:*",
+        "@capgent/api": "workspace:*",
         "@neondatabase/serverless": "^1.0.2",
         "@phosphor-icons/react": "^2.1.10",
         "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -73,7 +73,7 @@
     },
     "packages/sdk": {
       "name": "capgent-sdk",
-      "version": "1.0.0",
+      "version": "2.0.0",
     },
   },
   "packages": {
@@ -111,9 +111,9 @@
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
-    "@capagent/api": ["@capagent/api@workspace:apps/api"],
+    "@capgent/api": ["@capgent/api@workspace:apps/api"],
 
-    "@capagent/web": ["@capagent/web@workspace:apps/web"],
+    "@capgent/web": ["@capgent/web@workspace:apps/web"],
 
     "@cloudflare/kv-asset-handler": ["@cloudflare/kv-asset-handler@0.4.2", "", {}, "sha512-SIOD2DxrRRwQ+jgzlXCqoEFiKOFqaPjhnNTGKXSRLvp1HiOvapLaFG2kEr9dYQTYe8rKrd9uvDUzmAITeNyaHQ=="],
 

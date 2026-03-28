@@ -4,9 +4,9 @@
 
 # Capgent
 
-**Verification and identity for AI agents** — reverse CAPTCHA challenges, proof & identity tokens, a protected API surface, and a dashboard to manage projects and keys.
+**Verify that automated clients can follow your protocol** — not “click the traffic lights,” but **byte-level challenges**, **cryptographic checks**, and **short-lived proof tokens** you can require before they hit your real APIs.
 
-[Website](https://capgent.vercel.app) · [GitHub](https://github.com/piyushdhoka/Capgent) · [X](https://x.com/piyush_dhoka27) · [LinkedIn](https://www.linkedin.com/in/piyushdhoka27)
+[Website](https://capgent.vercel.app) · [GitHub](https://github.com/piyushdhoka/Capgent) · [Docs (in app)](https://capgent.vercel.app/docs) · [X](https://x.com/piyush_dhoka27) · [LinkedIn](https://www.linkedin.com/in/piyushdhoka27)
 
 [![Bun](https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white)](https://bun.sh/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
@@ -17,167 +17,247 @@
 
 ---
 
-## Overview
+## What is this?
 
-Capgent helps you prove that a caller is a **capable autonomous agent** (not a dumb bot): clients solve a byte-level challenge, receive short-lived **proof** JWTs, and can register for longer-lived **identity** tokens. A **Next.js** dashboard documents the flow, hosts a playground, and (with Neon) stores user accounts, projects, and API keys. The **API** runs as a **Cloudflare Worker** (Hono) with **Upstash Redis** for challenges, rate limits, guestbook, and benchmarks.
+**Capgent** is a small platform for **agent-oriented access control**:
 
-| Capability | What it does |
-|------------|----------------|
-| **Agent CAPTCHA** | `POST /api/challenge` → solve → `POST /api/verify/:challenge_id` → proof JWT |
-| **Protected surface** | `GET /api/protected/ping` validates Bearer proof or identity tokens |
-| **Identity & guestbook** | Register agents, exchange tokens, sign a public guestbook |
-| **Benchmarks** | Agents report runs; leaderboard at `/benchmarks` |
-| **Web app** | `/docs`, `/playground`, `/guestbook`, `/dashboard`, `/projects` |
+1. A client (script, service, or “agent”) calls your API to **start a challenge**.
+2. It receives **instructions** and opaque **data**; it must apply a defined set of **byte operations** (slice, XOR, hash, HMAC, etc.) and send back the correct **answer + HMAC**.
+3. If correct, the API returns a **proof JWT** (short-lived). You can also register **identity** tokens and tie usage to **projects and API keys** from the dashboard.
+
+So in practice: **generic scrapers and clients that don’t implement your flow fail**; **registered integrations that run the protocol succeed**. It is **not** a proof that the caller is “not human” — anyone who runs your client or SDK can pass. It **is** a structured **protocol + key + token** gate, similar in spirit to “OAuth for machines,” with an explicit challenge step.
+
+---
+
+## Who is it for?
+
+| You want to… | Capgent helps by… |
+|--------------|-------------------|
+| Gate **automation** hitting your API | Requiring challenge → verify → Bearer proof (or identity) on protected routes |
+| **Issue API keys** per project | Dashboard + Worker-backed project/key APIs |
+| **Demo** the flow in a browser | [Playground](https://capgent.vercel.app/playground) and in-app `/docs` |
+| **Let agents prove** they completed a run | Proof JWT + optional guestbook / benchmark reporting |
+| **Integrate from TypeScript** | Published npm package **`capgent-sdk`** |
+
+---
+
+## How the pieces fit together
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Next.js    │     │ Cloudflare Worker │     │ Neon + Upstash  │
+│  (apps/web) │────▶│ (apps/api, Hono) │────▶│ DB, Redis, etc. │
+│  UI, auth   │     │ challenges, JWT  │     │                 │
+└─────────────┘     └──────────────────┘     └─────────────────┘
+       │
+       └── capgent-sdk (npm) — same HTTP API from Node, Bun, Workers, etc.
+```
+
+**Typical integration flow**
+
+1. `POST /api/challenge` — get `challenge_id`, `nonce`, `data_b64`, `instructions`.
+2. Parse instructions → compute **answer** (SHA-256 of transformed bytes) and **hmac** (HMAC-SHA256 with `nonce`).
+3. `POST /api/verify/{challenge_id}` — receive **proof JWT**.
+4. Call **`GET /api/protected/ping`** (or your own gateway) with `Authorization: Bearer <proof-or-identity>`.
+
+Optional: **project API key** via header `X-Capgent-Api-Key` where the API expects it. Discovery: **`GET /.well-known/capgent.json`** (legacy **`capagent.json`** still works and returns the same payload).
 
 ---
 
 ## Monorepo layout
 
-| Path | Description |
-|------|-------------|
-| [`apps/api`](apps/api) | Hono API on Cloudflare Workers; challenges, verify, agents, guestbook, benchmarks |
-| [`apps/web`](apps/web) | Next.js 16 app — marketing, dashboard, docs, playground, auth (Neon) |
-| [`packages/sdk`](packages/sdk) | `capgent-sdk` — typed client for challenges, verify, protected ping, guestbook |
-| [`agents`](agents) | Sample agents & benchmark runner (OpenRouter / Grok / Gemini) |
+| Path | Role |
+|------|------|
+| [`apps/api`](apps/api) | Hono app on **Cloudflare Workers** — challenges, verify, protected ping, agents, guestbook, benchmarks, project keys |
+| [`apps/web`](apps/web) | **Next.js 16** — marketing, **dashboard**, **docs**, **playground**, email auth (Neon) |
+| [`packages/sdk`](packages/sdk) | **`capgent-sdk`** — TypeScript client published to npm |
+| [`agents`](agents) | Sample runners (OpenRouter / Grok / Gemini) and benchmark scripts |
 
-**Edge auth (web):** route protection lives in [`apps/web/proxy.ts`](apps/web/proxy.ts) (Next.js 16 **proxy** convention — JWT check for dashboard routes before SSR).
+**Routing note:** Dashboard auth can use [`apps/web/proxy.ts`](apps/web/proxy.ts) (Next.js proxy) for cookie/session checks on protected segments.
 
 ---
 
-## Quick start
+## Quick start (local)
 
-From the repository root (requires [Bun](https://bun.sh/)):
+Requires **[Bun](https://bun.sh/)** at the repo root.
 
 ```bash
 bun install
 ```
 
-### Run API + Web
+**Terminal 1 — API** (default `http://127.0.0.1:8787`):
 
 ```bash
-# Terminal 1 — API (Wrangler local, http://127.0.0.1:8787)
 bun run dev:api
+```
 
-# Terminal 2 — Web (http://localhost:3000)
+**Terminal 2 — Web** (`http://localhost:3000`):
+
+```bash
 bun run dev:web
 ```
 
-**Wrangler local dev** reads [`apps/api/.dev.vars`](apps/api/.dev.vars) (gitignored). Include **`UPSTASH_REDIS_REST_URL`** and **`UPSTASH_REDIS_REST_TOKEN`** there so guestbook/benchmarks use Redis (not only in-memory).
+**Wrangler / local Worker secrets:** use **`apps/api/.dev.vars`** (gitignored). Set at least **`UPSTASH_REDIS_REST_URL`** and **`UPSTASH_REDIS_REST_TOKEN`** if you want guestbook and benchmarks to persist beyond in-memory dev. Mirror **`CAPAGENT_*`** vars from [`apps/api/wrangler.toml`](apps/api/wrangler.toml) `[vars]` and add secrets (e.g. `DATABASE_URL`, `CAPAGENT_JWT_SECRET`) as your setup requires.
 
-### Useful URLs (local)
+**Web env:** copy [`apps/web/.env.example`](apps/web/.env.example) to `apps/web/.env` or `.env.local` and set `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` (e.g. `http://127.0.0.1:8787`), `SESSION_SECRET`, `DATABASE_URL`, and optional email/OpenRouter keys.
 
-| Page | URL |
-|------|-----|
-| Home | http://localhost:3000 |
-| Docs | http://localhost:3000/docs |
-| Playground | http://localhost:3000/playground |
-| Guestbook | http://localhost:3000/guestbook |
-| Benchmarks | http://localhost:3000/benchmarks |
-| API base | http://127.0.0.1:8787 |
+| Local URL | Purpose |
+|-----------|---------|
+| http://localhost:3000 | Landing |
+| http://localhost:3000/docs | Integration guide + examples |
+| http://localhost:3000/playground | Challenge → verify in the browser |
+| http://localhost:3000/dashboard | Projects & API keys (after login) |
+| http://127.0.0.1:8787 | Worker API base |
 
-### Sample agents & benchmarks
+**Sample agents**
 
 ```bash
 cd agents
-# See agents/package.json — e.g. grok / gemini samples and run-benchmark.ts
+# See package.json — grok/gemini samples, benchmarks
 ```
 
 Copy [`agents/.env.example`](agents/.env.example) → `agents/.env.local` and set `CAPAGENT_API_BASE_URL`, `OPENROUTER_API_KEY`, etc.
 
 ### Root scripts
 
-| Script | Purpose |
-|--------|---------|
-| `bun run dev:api` | Start API dev server |
-| `bun run dev:web` | Start Next.js dev server |
-| `bun run build` | Build SDK, API, and Web |
-| `bun run typecheck` | Typecheck API, Web, and SDK |
+| Command | Purpose |
+|---------|---------|
+| `bun run dev:api` | Worker dev server |
+| `bun run dev:web` | Next.js dev |
+| `bun run build` | Build SDK + API (dry-run) + Web |
+| `bun run build:sdk` | Compile `packages/sdk` → `dist/` |
+| `bun run typecheck` | Typecheck API, Web, SDK |
 
 ---
 
-## Environment variables
+## Environment variables (cheat sheet)
 
-### API — [`apps/api`](apps/api)
+### Worker — [`apps/api`](apps/api)
 
-Copy [`apps/api/.env.example`](apps/api/.env.example) and fill values. For **local Wrangler**, mirror secrets in **`.dev.vars`** (see above).
+Configure via **`wrangler.toml`** `[vars]`, **`wrangler secret put`**, and/or **`.dev.vars`** locally.
 
-**Required in production** (e.g. `wrangler secret put …`):
+**Commonly required in production**
 
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 - `CAPAGENT_JWT_SECRET`
+- `DATABASE_URL` (Neon) — projects / API keys tied to web users
+- `CAPAGENT_PUBLIC_BASE_URL`, `CAPAGENT_CORS_ORIGINS`
 
-**Common optional keys:**
+**Often tuned**
 
 - `CAPAGENT_CHALLENGE_TTL_SECONDS`, `CAPAGENT_PROOF_TTL_SECONDS`, `CAPAGENT_IDENTITY_TTL_SECONDS`
-- `CAPAGENT_PUBLIC_BASE_URL`, `CAPAGENT_CORS_ORIGINS`
-- `CAPAGENT_FORCE_INMEMORY` (`1` = in-memory only — dev only; **not** for guestbook persistence across restarts)
 - `CAPAGENT_ALLOW_PUBLIC_REGISTRATION`, `CAPAGENT_ADMIN_API_KEY`
-- Rate limits: `CAPAGENT_RATE_LIMIT_*`, `CAPAGENT_GUESTBOOK_COOLDOWN_SECONDS`
-- `DATABASE_URL` — Neon Postgres (projects / API keys flows)
+- `CAPAGENT_RATE_LIMIT_*`, `CAPAGENT_GUESTBOOK_COOLDOWN_SECONDS`
+- `CAPAGENT_FORCE_INMEMORY` — `1` only for quick local tests without Redis persistence
 
 ### Web — [`apps/web`](apps/web)
 
-Copy [`apps/web/.env.example`](apps/web/.env.example) → `apps/web/.env` (or `.env.local`).
-
-- `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` — public API base (e.g. `http://127.0.0.1:8787`)
-- `SESSION_SECRET` — session signing (≥ 32 chars)
-- `DATABASE_URL` — Neon for users/projects/keys
-- `OPENROUTER_API_KEY` — optional, for server-side flows in the playground
+- `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` — browser-facing API URL (Worker or same-origin proxy)
+- `SESSION_SECRET` — cookie session (≥ 32 characters)
+- `DATABASE_URL` — Neon for users, projects, keys
+- SMTP / OAuth keys as needed for signup and email verification (see app env patterns)
 
 ---
 
-## Deployment (overview)
+## Deploy
 
-### API (Cloudflare Worker)
+**API (Cloudflare)**
 
 ```bash
 cd apps/api
 bun run deploy
 ```
 
-Set the same secrets as production (`UPSTASH_*`, `CAPAGENT_JWT_SECRET`, `CAPAGENT_PUBLIC_BASE_URL`, CORS, admin key, etc.). Use **`CAPAGENT_FORCE_INMEMORY=0`** (or unset) in production.
+Set Cloudflare **secrets** and **vars** to match the Worker `Env` type in [`apps/api/src/config.ts`](apps/api/src/config.ts). Do **not** use `CAPAGENT_FORCE_INMEMORY=1` in production if you rely on Redis-backed features.
 
-### Web (Vercel / any Next host)
+**Web (e.g. Vercel)**
 
-Point `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` at your deployed API; configure `SESSION_SECRET` and `DATABASE_URL`. Build: `bun run build` from `apps/web` or use the root `bun run build:web`.
+- Root: **`apps/web`** (or your monorepo build command).
+- Set `NEXT_PUBLIC_CAPAGENT_API_BASE_URL` to your **production Worker URL**.
+- Set `SESSION_SECRET`, `DATABASE_URL`, and the rest to match Neon and email.
+
+Build from repo root:
+
+```bash
+bun run build:web
+```
 
 ---
 
-## SDK & integration
+## npm: publish `capgent-sdk`
 
-Install the workspace SDK from `packages/sdk` (or publish and `npm install capgent-sdk`).
+The package name on npm is **`capgent-sdk`** ([`packages/sdk`](packages/sdk)). Bump **`version`** in `packages/sdk/package.json` when you release.
+
+**One-time:** [create an npm account](https://www.npmjs.com/signup) and log in:
+
+```bash
+npm login
+```
+
+**Every release**
+
+```bash
+cd packages/sdk
+bun run build
+npm publish --access public
+```
+
+Dry-run (no upload):
+
+```bash
+cd packages/sdk
+bun run build
+npm publish --access public --dry-run
+```
+
+After publishing, consumers install with:
+
+```bash
+npm install capgent-sdk
+```
+
+**Breaking changes** are described in [`packages/sdk/README.md`](packages/sdk/README.md) (e.g. v2 type/helper renames). Use `createClient` from `capgent-sdk` with `CAPAGENT_API_BASE_URL` / API key env vars as documented there.
+
+---
+
+## SDK snippet
 
 ```ts
 import { createClient } from "capgent-sdk"
+import { solveChallengeFromSteps } from "capgent-sdk/solver"
+import { parseCanonicalStepsFromInstructions } from "capgent-sdk/parser/heuristic"
 
 const client = createClient({
   baseUrl: process.env.CAPAGENT_API_BASE_URL!,
-  agentName: "my-agent",
+  apiKey: process.env.CAPAGENT_API_KEY, // project key when required
+  agentName: "my-service",
   agentVersion: "1.0.0",
 })
 
-// getChallenge → verifyChallenge → protectedPing → registerAgent → signGuestbook
+const ch = await client.getChallenge()
+const steps = parseCanonicalStepsFromInstructions(ch.instructions)
+const { answer, hmac } = await solveChallengeFromSteps({
+  data_b64: ch.data_b64,
+  nonce: ch.nonce,
+  steps,
+})
+const proof = await client.verifyChallenge(ch.challenge_id, answer, hmac)
+await client.protectedPing(proof.token)
 ```
 
-Full prompt templates and HTTP tables live in-app at **`/docs`**.
-
----
-
-## Protecting your own routes
-
-Validate proof/identity tokens server-side via `GET /api/protected/ping`, or mirror the pattern in [`apps/web/proxy.ts`](apps/web/proxy.ts) for cookie-based flows in Next.js.
+Full tables, curl, and middleware patterns: **https://capgent.vercel.app/docs** (or local `/docs`).
 
 ---
 
 ## Further reading
 
-- [`Context.md`](Context.md) — product vision and roadmap context (if present)
-- [`packages/sdk/README.md`](packages/sdk/README.md) — SDK details
+- [`Context.md`](Context.md) — product and architecture notes
+- [`packages/sdk/README.md`](packages/sdk/README.md) — SDK install, errors, OpenRouter parser
 
 ---
 
 <div align="center">
 
-<sub>Built with Capgent · Agent verification that keeps humans out of the loop.</sub>
+<sub><strong>Capgent</strong> — protocol-first verification and API keys for autonomous clients.</sub>
 
 </div>

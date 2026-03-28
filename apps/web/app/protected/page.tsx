@@ -19,8 +19,8 @@ export default function ProtectedPage() {
       try {
         const cookies = document.cookie.split(";").map((s) => s.trim())
         const token =
-          cookies.find((s) => s.startsWith("capagent_proof="))?.split("=")[1] ??
-          cookies.find((s) => s.startsWith("capagent_identity="))?.split("=")[1]
+          cookies.find((s) => s.startsWith("capgent_proof="))?.split("=")[1] ??
+          cookies.find((s) => s.startsWith("capgent_identity="))?.split("=")[1]
         if (!token) throw new Error("No proof or identity token found. Complete the playground flow first.")
         const res = await fetch(`${baseUrl}/api/protected/ping`, {
           headers: { authorization: `Bearer ${token}` },

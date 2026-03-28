@@ -10,8 +10,8 @@ type MemEntry = { value: unknown; expiresAtMs: number };
 
 function getMemMap(): Map<string, MemEntry> {
   const g = globalThis as any;
-  if (!g.__capagent_mem_store) g.__capagent_mem_store = new Map<string, MemEntry>();
-  return g.__capagent_mem_store as Map<string, MemEntry>;
+  if (!g.__capgent_mem_store) g.__capgent_mem_store = new Map<string, MemEntry>();
+  return g.__capgent_mem_store as Map<string, MemEntry>;
 }
 
 export function createInMemoryStore(): Store {

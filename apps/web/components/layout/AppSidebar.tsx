@@ -10,7 +10,7 @@ import { BookOpen, CaretLeft, CaretRight, Folder, House, List, Play, SignOut } f
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { signoutAction } from "@/app/login/actions"
 
-const STORAGE_KEY = "capagent_dashboard_sidebar_collapsed"
+const STORAGE_KEY = "capgent_dashboard_sidebar_collapsed"
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: House },

@@ -1,8 +1,8 @@
 
-Capagent
+Capgent
 AI Agent Verification, Identity, and Access Infrastructure
 
-Capagent is an infrastructure platform designed to detect, verify, authenticate, and analyze AI agents interacting with applications and APIs.
+Capgent is an infrastructure platform designed to detect, verify, authenticate, and analyze AI agents interacting with applications and APIs.
 
 As autonomous AI agents become common internet users, applications need systems that can:
 
@@ -16,7 +16,7 @@ grant controlled API access
 
 monitor agent traffic
 
-Capagent provides these capabilities through a combination of:
+Capgent provides these capabilities through a combination of:
 
 agent challenges
 
@@ -46,15 +46,15 @@ research agents
 
 browser automation agents
 
-Capagent provides the identity and verification layer for AI agents, similar to how OAuth provides identity for humans.
+Capgent provides the identity and verification layer for AI agents, similar to how OAuth provides identity for humans.
 
 Long term vision:
 
-Capagent becomes the standard infrastructure layer for AI agent authentication and capability verification.
+Capgent becomes the standard infrastructure layer for AI agent authentication and capability verification.
 
 2 Core Product Components
 
-Capagent consists of five major subsystems.
+Capgent consists of five major subsystems.
 
 Agent CAPTCHA & Verification API
 
@@ -125,7 +125,7 @@ POST /verify
 
 4 Agent Identity & Token Layer
 
-Capagent provides identity tokens for AI agents.
+Capgent provides identity tokens for AI agents.
 
 These tokens represent the verified identity and capabilities of an AI agent.
 
@@ -173,7 +173,7 @@ Revoke token
 POST /agents/revoke
 5 Agent-Only Access Gateway
 
-Capagent provides middleware that protects APIs and services.
+Capgent provides middleware that protects APIs and services.
 
 The gateway enforces:
 
@@ -217,12 +217,12 @@ Nginx reverse proxy
 
 Example Express middleware
 
-capagent.verifyAgent({
+capgent.verifyAgent({
  requiredScore: 70
 })
 6 Capability & Safety Benchmarking
 
-Capagent evaluates AI agents using a standardized benchmark suite.
+Capgent evaluates AI agents using a standardized benchmark suite.
 
 Benchmark categories include:
 
@@ -260,7 +260,7 @@ Benchmark results are stored and included in the agent identity token.
 
 7 Agent Traffic Analytics
 
-Capagent provides analytics for understanding agent usage.
+Capgent provides analytics for understanding agent usage.
 
 Every request is classified as
 
@@ -332,7 +332,7 @@ This helps product teams filter non-human traffic and analyze real user behavior
 
 9 SDKs for Agent Frameworks
 
-Capagent provides client libraries for popular agent frameworks.
+Capgent provides client libraries for popular agent frameworks.
 
 Supported environments
 
@@ -349,16 +349,16 @@ OpenAI Assistants
 MCP based agents
 
 Example Node SDK
-const agent = new CapagentClient({
+const agent = new CapgentClient({
  agentId: "research_bot"
 })
 
 await agent.verify()
 await agent.solveChallenge()
 Example Python SDK
-from capagent import CapagentClient
+from capgent import CapgentClient
 
-client = CapagentClient(agent_id="research_bot")
+client = CapgentClient(agent_id="research_bot")
 client.verify()
 
 SDK responsibilities
@@ -375,7 +375,7 @@ attach identity tokens
 
 10 System Architecture
 
-Capagent architecture includes several services.
+Capgent architecture includes several services.
 
 Client Layer
 
@@ -571,6 +571,6 @@ AI security certification
 
 17 Long Term Goal
 
-Capagent aims to become a foundational infrastructure platform for AI agents interacting with the internet.
+Capgent aims to become a foundational infrastructure platform for AI agents interacting with the internet.
 
-Similar to how OAuth standardizes user authentication, Capagent could standardize AI agent verification and identity
+Similar to how OAuth standardizes user authentication, Capgent could standardize AI agent verification and identity

@@ -17,6 +17,14 @@
 npm install capgent-sdk
 ```
 
+## Migrating from capgent-sdk v1.x
+
+Breaking changes in **v2**:
+
+- **Types & helpers:** `CapagentError` → `CapgentError`, `CapagentClientOptions` → `CapgentClientOptions`, `withCapagentProof` → `withCapgentProof`.
+- **Admin HTTP header:** `x-capagent-admin-key` → `x-capgent-admin-key`.
+- Environment variables stay **`CAPAGENT_*`** / **`NEXT_PUBLIC_CAPAGENT_API_BASE_URL`** (unchanged).
+
 ## Basic usage
 
 ```ts
@@ -65,7 +73,7 @@ const steps = await parseStepsWithOpenRouter(ch.instructions, {
 
 ## Errors
 
-SDK methods throw `CapagentError`, with:
+SDK methods throw `CapgentError`, with:
 - `code`: one of `challenge_failed`, `verify_failed`, `protected_ping_failed`, `agent_register_failed`, `identity_token_failed`, `guestbook_sign_failed`
 - `status`: HTTP status code
 - `endpoint`: the endpoint that failed

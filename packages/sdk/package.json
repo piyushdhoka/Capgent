@@ -1,12 +1,11 @@
 {
   "name": "capgent-sdk",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "TypeScript SDK for Capgent — agent verification, reverse CAPTCHA challenges, and API identity.",
   "private": false,
   "type": "module",
   "keywords": [
     "capgent",
-    "capagent",
     "ai-agents",
     "agent-verification",
     "reverse-captcha",

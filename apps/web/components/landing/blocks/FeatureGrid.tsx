@@ -155,7 +155,7 @@ const SkeletonFive = () => {
         </p>
       </motion.div>
       <motion.div variants={variantsSecond} className="ml-auto flex w-3/4 flex-row items-center justify-end space-x-2 rounded-full border border-border/50 bg-background p-2">
-        <p className="text-xs text-muted-foreground">/.well-known/capagent.json</p>
+        <p className="text-xs text-muted-foreground">/.well-known/capgent.json</p>
         <div className="h-6 w-6 shrink-0 rounded-full bg-foreground/10" />
       </motion.div>
     </motion.div>

@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import type { Env } from "./config";
 import {
@@ -175,7 +175,7 @@ async function getApiKeyContext(
 }
 
 app.onError((err, c) => {
-  console.error("capagent_error", err);
+  console.error("capgent_error", err);
   return c.json({ error: "internal_error", message: err?.message ?? String(err) }, 500);
 });
 
@@ -319,7 +319,7 @@ app.delete("/api/me/projects/:projectId/keys/:keyId", async (c) => {
 
 app.post("/api/projects", async (c) => {
   const adminKey = getAdminApiKey(c.env);
-  const header = c.req.header("x-capagent-admin-key") ?? "";
+  const header = c.req.header("x-capgent-admin-key") ?? "";
   if (!adminKey || header !== adminKey) {
     return c.json({ error: "admin_key_required" }, 401);
   }
@@ -352,7 +352,7 @@ app.post("/api/projects", async (c) => {
 
 app.post("/api/projects/keys", async (c) => {
   const adminKey = getAdminApiKey(c.env);
-  const header = c.req.header("x-capagent-admin-key") ?? "";
+  const header = c.req.header("x-capgent-admin-key") ?? "";
   if (!adminKey || header !== adminKey) {
     return c.json({ error: "admin_key_required" }, 401);
   }
@@ -387,7 +387,7 @@ app.post("/api/projects/keys", async (c) => {
 
 app.get("/api/projects/:projectId", async (c) => {
   const adminKey = getAdminApiKey(c.env);
-  const header = c.req.header("x-capagent-admin-key") ?? "";
+  const header = c.req.header("x-capgent-admin-key") ?? "";
   if (!adminKey || header !== adminKey) {
     return c.json({ error: "admin_key_required" }, 401);
   }
@@ -411,7 +411,7 @@ app.get("/api/projects/:projectId", async (c) => {
 
 app.delete("/api/projects/keys/:keyId", async (c) => {
   const adminKey = getAdminApiKey(c.env);
-  const header = c.req.header("x-capagent-admin-key") ?? "";
+  const header = c.req.header("x-capgent-admin-key") ?? "";
   if (!adminKey || header !== adminKey) {
     return c.json({ error: "admin_key_required" }, 401);
   }
@@ -425,7 +425,7 @@ app.delete("/api/projects/keys/:keyId", async (c) => {
 app.post("/api/agents/register", async (c) => {
   if (!allowPublicRegistration(c.env)) {
     const adminKey = getAdminApiKey(c.env);
-    const header = c.req.header("x-capagent-admin-key") ?? "";
+    const header = c.req.header("x-capgent-admin-key") ?? "";
     if (!adminKey || header !== adminKey) {
       return c.json({ error: "admin_key_required" }, 401);
     }
@@ -458,7 +458,7 @@ app.post("/api/agents/register", async (c) => {
 
   const identityTtl = getIdentityTtlSeconds(c.env);
   const claims: AgentIdentityClaims = {
-    typ: "capagent_identity",
+    typ: "capgent_identity",
     agent_id: agent.agent_id,
     agent_name: agent.agent_name,
     framework: agent.framework,
@@ -512,7 +512,7 @@ app.post("/api/agents/token", async (c) => {
 
   const identityTtl = getIdentityTtlSeconds(c.env);
   const claims: AgentIdentityClaims = {
-    typ: "capagent_identity",
+    typ: "capgent_identity",
     agent_id: agent.agent_id,
     agent_name: agent.agent_name,
     framework: agent.framework,
@@ -545,7 +545,7 @@ app.post("/api/agents/refresh", async (c) => {
 
   const identityTtl = getIdentityTtlSeconds(c.env);
   const nextClaims: AgentIdentityClaims = {
-    typ: "capagent_identity",
+    typ: "capgent_identity",
     agent_id: agent.agent_id,
     agent_name: agent.agent_name,
     framework: agent.framework,
@@ -668,7 +668,7 @@ app.post("/api/verify/:challengeId", async (c) => {
   const { jwt, exp } = await signProofJwt(
     c.env,
     {
-      typ: "capagent_proof",
+      typ: "capgent_proof",
       challenge_id: challengeId,
       agent_name: body.agent_name?.trim() || stored.agent_name,
       agent_version: body.agent_version?.trim() || stored.agent_version
@@ -688,15 +688,15 @@ app.get("/api/protected/ping", async (c) => {
     return c.json(
       {
         error: detail,
-        capagent: {
+        capgent: {
           challenge_endpoint: `${base}/api/challenge`,
           verify_endpoint: `${base}/api/verify/{challenge_id}`,
-          well_known: `${base}/.well-known/capagent.json`
+          well_known: `${base}/.well-known/capgent.json`
         }
       },
       401,
       {
-        "WWW-Authenticate": `Bearer realm="capagent", challenge_endpoint="${base}/api/challenge"`
+        "WWW-Authenticate": `Bearer realm="capgent", challenge_endpoint="${base}/api/challenge"`
       }
     );
   }
@@ -818,7 +818,7 @@ app.get("/api/benchmarks", async (c) => {
 
 app.delete("/api/benchmarks", async (c) => {
   const adminKey = getAdminApiKey(c.env);
-  const header = c.req.header("x-capagent-admin-key") ?? "";
+  const header = c.req.header("x-capgent-admin-key") ?? "";
   if (adminKey && header !== adminKey) {
     return c.json({ error: "admin_key_required" }, 401);
   }
@@ -909,7 +909,7 @@ app.get("/api/guestbook", async (c) => {
 
 app.delete("/api/guestbook", async (c) => {
   const adminKey = getAdminApiKey(c.env);
-  const header = c.req.header("x-capagent-admin-key") ?? "";
+  const header = c.req.header("x-capgent-admin-key") ?? "";
   if (adminKey && header !== adminKey) {
     return c.json({ error: "admin_key_required" }, 401);
   }
@@ -917,7 +917,7 @@ app.delete("/api/guestbook", async (c) => {
   return c.json({ ok: true, cleared: true });
 });
 
-app.get("/.well-known/capagent.json", async (c) => {
+async function wellKnownCapgentJson(c: Context<{ Bindings: Env }>) {
   const base = (c.env.CAPAGENT_PUBLIC_BASE_URL ?? "").replace(/\/+$/, "") || "http://localhost:8787";
   return c.json({
     issuer: base,
@@ -931,7 +931,12 @@ app.get("/.well-known/capagent.json", async (c) => {
     docs_url: `${base}/docs`,
     protocol_version: "0.1.0"
   });
-});
+}
+
+app.get("/.well-known/capgent.json", (c) => wellKnownCapgentJson(c));
+
+/** @deprecated Prefer `/.well-known/capgent.json`; kept for older integrations. */
+app.get("/.well-known/capagent.json", (c) => wellKnownCapgentJson(c));
 
 export default app;
 

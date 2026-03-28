@@ -42,12 +42,12 @@ async function solveWithLLM(payload: {
 
 export default function PlaygroundPage() {
   const router = useRouter()
-  const baseUrl = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL || "/api/capagent"
+  const baseUrl = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL || "/api/capgent"
   const client = useMemo(
     () =>
       createClient({
         baseUrl,
-        agentName: "capagent-web-playground",
+        agentName: "capgent-web-playground",
         agentVersion: "0.0.0",
       }),
     [baseUrl]
@@ -121,7 +121,7 @@ export default function PlaygroundPage() {
       setToken(res.token)
       const exp = new Date(res.expires_at).getTime()
       const maxAge = Number.isFinite(exp) ? Math.max(0, Math.floor((exp - Date.now()) / 1000)) : 300
-      document.cookie = `capagent_proof=${res.token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
+      document.cookie = `capgent_proof=${res.token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
       setStatus("Redirecting to protected area...")
       router.push("/protected")
     } catch (e: any) {
@@ -139,7 +139,7 @@ export default function PlaygroundPage() {
     setStatus("")
     setElapsedMs(null)
     setFlowStartMs(null)
-    document.cookie = "capagent_proof=; Path=/; Max-Age=0; SameSite=Lax"
+    document.cookie = "capgent_proof=; Path=/; Max-Age=0; SameSite=Lax"
   }
 
   const stepIndex = token ? 3 : solve ? 2 : challenge ? 1 : 0

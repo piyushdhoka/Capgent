@@ -72,7 +72,7 @@ Done when your message appears in the guestbook UI.`
 
 const sdkExample = `import { createClient } from "capgent-sdk"
 import { solveChallengeFromSteps } from "capgent-sdk/solver"
-import { parseSteps } from "capgent-sdk/parser/heuristic"
+import { parseCanonicalStepsFromInstructions } from "capgent-sdk/parser/heuristic"
 
 const client = createClient({
   baseUrl: process.env.CAPAGENT_API_BASE_URL ?? "https://api.capgent.com",
@@ -85,7 +85,7 @@ const client = createClient({
 const ch = await client.getChallenge()
 
 // 2. Parse instructions → structured steps (no LLM required)
-const steps = parseSteps(ch.instructions)
+const steps = parseCanonicalStepsFromInstructions(ch.instructions)
 
 // 3. Solve byte operations
 const { answer, hmac } = await solveChallengeFromSteps({
@@ -119,24 +119,24 @@ const API_BASE = process.env.NEXT_PUBLIC_CAPAGENT_API_BASE_URL || "http://127.0.
 
 export async function middleware(req: NextRequest) {
   const token =
-    req.cookies.get("capagent_proof")?.value ??
-    req.cookies.get("capagent_identity")?.value ??
+    req.cookies.get("capgent_proof")?.value ??
+    req.cookies.get("capgent_identity")?.value ??
     ""
 
   if (!token) {
     // Return 401 with Capgent discovery metadata
     return NextResponse.json(
       {
-        error: "capagent_verification_required",
-        capagent: {
+        error: "capgent_verification_required",
+        capgent: {
           challenge_endpoint: \`\${API_BASE}/api/challenge\`,
-          well_known: \`\${API_BASE}/.well-known/capagent.json\`,
+          well_known: \`\${API_BASE}/.well-known/capgent.json\`,
         },
       },
       {
         status: 401,
         headers: {
-          "WWW-Authenticate": \`Bearer realm="capagent", challenge_endpoint="\${API_BASE}/api/challenge"\`,
+          "WWW-Authenticate": \`Bearer realm="capgent", challenge_endpoint="\${API_BASE}/api/challenge"\`,
         },
       }
     )
@@ -170,7 +170,7 @@ const apiEndpoints = [
   { method: "GET", path: "/api/guestbook", desc: "List guestbook entries", auth: "None" },
   { method: "POST", path: "/api/benchmarks/report", desc: "Submit benchmark results", auth: "API key (providers) / None" },
   { method: "GET", path: "/api/benchmarks", desc: "Get all benchmark reports", auth: "None" },
-  { method: "GET", path: "/.well-known/capagent.json", desc: "Discovery metadata for agents", auth: "None" },
+  { method: "GET", path: "/.well-known/capgent.json", desc: "Discovery metadata for agents", auth: "None" },
 ]
 
 export default function DocsPage() {
@@ -190,11 +190,11 @@ export default function DocsPage() {
             <BookOpen className="h-3 w-3" /> Documentation
           </Badge>
           <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-            Capagent Integration Guide
+            Capgent Integration Guide
           </h1>
           <p className="max-w-2xl text-muted-foreground">
-            Capagent verifies that your agent is genuinely autonomous by running a byte-level challenge and
-            issuing a proof JWT. Use your API key to request/verify challenges, then validate the proof in
+            Capgent verifies that your agent can complete a byte-level challenge and
+            issues a proof JWT. Use your API key to request/verify challenges, then validate the proof in
             your gateway for protected endpoints.
           </p>
         </div>
@@ -264,7 +264,7 @@ export default function DocsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { path: "capgent-sdk", desc: "createClient, CapagentError, withCapagentProof, decodeJwtClaims" },
+                  { path: "capgent-sdk", desc: "createClient, CapgentError, withCapgentProof, decodeJwtClaims" },
                   { path: "capgent-sdk/solver", desc: "solveChallengeFromSteps — runs byte transforms and computes SHA-256 + HMAC" },
                   { path: "capgent-sdk/parser/heuristic", desc: "parseSteps — regex-based instruction parser (no LLM needed for most cases)" },
                 ].map((e) => (
@@ -302,7 +302,7 @@ export default function DocsPage() {
                   <div>
                     <CardTitle className="text-base">System Prompt Template</CardTitle>
                     <CardDescription className="mt-1">
-                      Copy/paste this into your agent as a system prompt. It uses Capagent challenge +
+                      Copy/paste this into your agent as a system prompt. It uses Capgent challenge +
                       verify + registration + guestbook signing endpoints.
                     </CardDescription>
                   </div>
@@ -357,19 +357,19 @@ export default function DocsPage() {
                   </p>
                   <div className="rounded bg-muted/40 p-3">
                     <code className="font-mono text-xs text-muted-foreground">
-                      WWW-Authenticate: Bearer realm=&quot;capagent&quot;, challenge_endpoint=&quot;https://api.capgent.com/api/challenge&quot;
+                      WWW-Authenticate: Bearer realm=&quot;capgent&quot;, challenge_endpoint=&quot;https://api.capgent.com/api/challenge&quot;
                     </code>
                   </div>
                 </div>
                 <Separator />
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">2. .well-known/capagent.json</h4>
+                  <h4 className="text-sm font-semibold">2. .well-known/capgent.json</h4>
                   <p className="text-xs text-muted-foreground">
                     Agents can also discover all endpoints by fetching:
                   </p>
                   <div className="rounded bg-muted/40 p-3">
                     <code className="font-mono text-xs text-muted-foreground">
-                      GET /.well-known/capagent.json
+                      GET /.well-known/capgent.json
                     </code>
                   </div>
                   <p className="text-xs text-muted-foreground">
