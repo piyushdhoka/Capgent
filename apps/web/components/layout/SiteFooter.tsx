@@ -184,7 +184,7 @@ export function SiteFooter() {
 
           {/* Copyright */}
           <p className="text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Capgent, Inc.
+            &copy; {new Date().getFullYear()} Capgent
           </p>
 
           {/* Utilities */}
