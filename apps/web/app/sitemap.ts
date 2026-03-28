@@ -14,13 +14,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/benchmarks",
     "/login",
     "/signup",
+    "/legal/privacy",
+    "/legal/terms",
+    "/legal/dsr",
   ]
 
   return routes.map((path) => ({
     url: `${baseUrl}${path}`,
     lastModified: now,
     changeFrequency: path === "" ? "weekly" : "monthly",
-    priority: path === "" ? 1 : 0.7,
+    priority:
+      path === ""
+        ? 1
+        : path.startsWith("/legal/")
+          ? 0.5
+          : 0.7,
   }))
 }
 

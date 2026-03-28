@@ -39,20 +39,11 @@ const GROUPS: FooterGroup[] = [
     ],
   },
   {
-    title: "Company",
-    links: [
-      { href: "#", label: "Careers" },
-      { href: "#", label: "Wall of love" },
-      { href: "#", label: "Security" },
-      { href: "#", label: "Responsible disclosure" },
-    ],
-  },
-  {
     title: "Legal",
     links: [
-      { href: "#", label: "Privacy policy" },
-      { href: "#", label: "Terms of service" },
-      { href: "#", label: "DSR/DSAR" },
+      { href: "/legal/privacy", label: "Privacy policy" },
+      { href: "/legal/terms", label: "Terms of service" },
+      { href: "/legal/dsr", label: "DSR/DSAR" },
     ],
   },
 ]
@@ -151,7 +142,7 @@ export function SiteFooter() {
         </div>
 
         {/* Link columns */}
-        <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-12">
+        <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
           {GROUPS.map((g) => (
             <div key={g.title} className="space-y-4">
               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">{g.title}</p>
