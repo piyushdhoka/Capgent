@@ -139,39 +139,36 @@
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+/* ── Docs sidebar: full collapse ──────────────────────────────── */
 
-/* ── Docs sidebar: full collapse ── */
+/*
+ * Fumadocs uses --fd-sidebar-width (268px on md+) for the grid column.
+ * When collapsed we override it to 0 on the layout, then visually
+ * hide the sidebar content while keeping the toggle button accessible.
+ */
 
-/* 1. Shrink the sidebar to 0 and hide everything */
+/* 1. Zero out the grid column for the sidebar when collapsed */
+#nd-docs-layout:has(#nd-sidebar[data-collapsed="true"]) {
+  --fd-sidebar-width: 0px !important;
+}
+
+/* 2. The sidebar aside itself — keep it in flow but zero-width */
 #nd-sidebar[data-collapsed="true"] {
   width: 0 !important;
   min-width: 0 !important;
+  overflow: hidden !important;
+  border-width: 0 !important;
   padding: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  overflow: visible !important;       /* let toggle overflow */
 }
 
-/* 2. Hide all children inside the collapsed sidebar */
-#nd-sidebar[data-collapsed="true"] > * {
-  display: none !important;
-}
-
-/* 3. Show only the toggle button, positioned at the edge */
-#nd-sidebar[data-collapsed="true"] > div:first-child {
-  display: flex !important;
-  position: fixed;
+/* 3. Place the toggle button in a fixed spot so it's always reachable */
+#nd-docs-layout:has(#nd-sidebar[data-collapsed="true"])
+  button[aria-label="Collapse Sidebar"],
+#nd-docs-layout:has(#nd-sidebar[data-collapsed="true"])
+  button[data-collapsed] {
+  position: fixed !important;
   top: 14px;
-  left: 8px;
+  left: 12px;
   z-index: 50;
 }
 
-/* Keep only the actual button inside that div */
-#nd-sidebar[data-collapsed="true"] > div:first-child > *:not(button) {
-  display: none !important;
-}
-
-/* 4. Remove the grid column reserved for the sidebar */
-#nd-docs-layout[data-sidebar-collapsed="true"] {
-  grid-template-columns: 0 1fr !important;
-}
