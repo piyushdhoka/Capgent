@@ -139,3 +139,27 @@
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+
+/* Force Docs sidebar collapse on desktop - only toggle visible */
+[data-collapsed="true"] {
+  width: 56px !important;
+  min-width: 56px !important;
+  overflow-x: hidden !important;
+}
+
+/* Hide everything except toggle area */
+[data-collapsed="true"] .fd-sidebar-content,
+[data-collapsed="true"] .fd-sidebar-search,
+[data-collapsed="true"] .fd-sidebar-footer,
+[data-collapsed="true"] nav,
+[data-collapsed="true"] .text-sm.font-semibold,
+[data-collapsed="true"] span:not([class*="icon"]) {
+  display: none !important;
+}
+
+/* Ensure the toggle area doesn't wrap or show text */
+[data-collapsed="true"] .flex.items-center.justify-between {
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+  justify-content: center !important;
+}

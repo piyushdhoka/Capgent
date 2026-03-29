@@ -31,7 +31,14 @@ export default function DocsLayoutWrapper({ children }: { children: ReactNode })
           enabled: true,
         }}
       >
-        <DocsLayout tree={source.getPageTree()} {...getDocsLayoutProps()}>
+        <DocsLayout
+          tree={source.getPageTree()}
+          {...getDocsLayoutProps()}
+          sidebar={{
+            collapsible: true, // v16+
+          }}
+          // If navigation is in header, ensure it doesn't conflict
+        >
           {children}
         </DocsLayout>
       </RootProvider>

@@ -5,7 +5,7 @@ import { DOCS_LINKS, DOCS_PRODUCT } from "@/lib/docs/constants"
  * Options passed to Fumadocs `DocsLayout` (nav, top links, GitHub, search).
  * Keep product copy in `constants.ts`; keep layout wiring here only.
  */
-export function getDocsLayoutProps(): BaseLayoutProps {
+export function getDocsLayoutProps(): any {
   return {
     githubUrl: DOCS_LINKS.github,
     nav: {
@@ -32,6 +32,9 @@ export function getDocsLayoutProps(): BaseLayoutProps {
     ],
     searchToggle: {
       enabled: true,
+    },
+    sidebar: {
+      collapsible: true,
     },
     themeSwitch: {
       enabled: true,
