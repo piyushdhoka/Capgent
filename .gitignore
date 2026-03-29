@@ -4,6 +4,7 @@ node_modules/
 # Build outputs
 dist/
 .next/
+apps/web/.source/
 .turbo/
 out/
 
@@ -44,3 +45,6 @@ npm-debug.log*
 
 # Misc
 .cache/
+
+# Generated from fumadocs-ui (see apps/web/scripts/copy-fumadocs-css.mjs)
+apps/web/styles/vendor/fumadocs.css

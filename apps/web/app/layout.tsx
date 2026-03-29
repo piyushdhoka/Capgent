@@ -16,6 +16,7 @@ import { ProjectSwitcher } from "@/components/ProjectSwitcher"
 import { UserNav } from "@/components/UserNav"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { FooterGate } from "@/components/layout/FooterGate"
+import { MarketingChromeGate } from "@/components/layout/MarketingChromeGate"
 
 const fontHeading = Inter({
   subsets: ["latin"],
@@ -92,7 +93,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider>
           <div className="relative flex min-h-screen flex-col">
-            {/* ─── NAVBAR ─── */}
+            {/* ─── NAVBAR (hidden on /docs — Fumadocs provides its own chrome) ─── */}
+            <MarketingChromeGate>
             <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
               <div className="container flex h-16 max-w-screen-xl items-center justify-between">
                 {/* Left: logo + nav */}
@@ -156,6 +158,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 </div>
               </div>
             </header>
+            </MarketingChromeGate>
 
             {/* ─── MAIN ─── */}
             <main className="flex-1">{children}</main>
