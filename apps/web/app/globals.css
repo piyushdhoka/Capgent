@@ -161,14 +161,10 @@
   padding: 0 !important;
 }
 
-/* 3. Place the toggle button in a fixed spot so it's always reachable */
+/* 3. Hide the "Open Search" button in Fumadocs' floating collapsed trigger
+      so that only the sidebar toggle button is visible */
 #nd-docs-layout:has(#nd-sidebar[data-collapsed="true"])
-  button[aria-label="Collapse Sidebar"],
-#nd-docs-layout:has(#nd-sidebar[data-collapsed="true"])
-  button[data-collapsed] {
-  position: fixed !important;
-  top: 14px;
-  left: 12px;
-  z-index: 50;
+  .fixed button[aria-label="Open Search"] {
+  display: none !important;
 }
 
