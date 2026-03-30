@@ -47,4 +47,5 @@ npm-debug.log*
 .cache/
 
 # Generated from fumadocs-ui (see apps/web/scripts/copy-fumadocs-css.mjs)
-apps/web/styles/vendor/fumadocs.css
+apps/web/styles/vendor/fumadocs-ui.css
+apps/web/public/fumadocs-ui.css

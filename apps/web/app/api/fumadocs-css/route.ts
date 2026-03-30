@@ -5,7 +5,7 @@ import { NextResponse } from "next/server"
 
 /** `app/api/fumadocs-css` → `apps/web` (three levels up from this file’s directory). */
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
-const vendorCss = join(webRoot, "styles", "vendor", "fumadocs.css")
+const vendorCss = join(webRoot, "styles", "vendor", "fumadocs-ui.css")
 
 let cached: string | null = null
 
