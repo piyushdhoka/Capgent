@@ -203,7 +203,7 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
                               <p className="text-[10px] text-muted-foreground">success</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-bold tabular-nums">{m.runs}</p>
+                              <p className="text-sm font-bold tabular-nums">{Math.min(100, m.runs)}</p>
                               <p className="text-[10px] text-muted-foreground">runs</p>
                             </div>
                             <div className="text-right">
