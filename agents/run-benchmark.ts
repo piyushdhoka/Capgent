@@ -4,6 +4,8 @@ import { parseStepsWithOpenRouter } from "capgent-sdk/parser/llm-openrouter";
 
 type BenchmarkOptions = {
   runs: number;
+  delay: number;
+  tag?: string;
   modelId?: string;
   framework: string;
   agentName: string;
@@ -20,7 +22,9 @@ function parseArgs(argv: string[]): BenchmarkOptions {
     if (key) args.set(key, value ?? "true");
   }
 
-  const runs = Number(args.get("runs") ?? "10");
+  const runs = Number(args.get("runs") ?? "100");
+  const delay = Number(args.get("delay") ?? "1000");
+  const tag = args.get("tag");
   const modelId = args.get("model") ?? process.env.OPENROUTER_MODEL;
   const framework = args.get("framework") ?? "node-sdk";
   const agentName = args.get("agent") ?? "capgent-benchmark-agent";
@@ -28,7 +32,9 @@ function parseArgs(argv: string[]): BenchmarkOptions {
   const baseUrl = process.env.CAPAGENT_API_BASE_URL ?? "http://127.0.0.1:8787";
 
   return {
-    runs: Number.isFinite(runs) && runs > 0 ? runs : 10,
+    runs: Number.isFinite(runs) && runs > 0 ? runs : 100,
+    delay: Number.isFinite(delay) && delay >= 0 ? delay : 1000,
+    tag,
     modelId: modelId || undefined,
     framework,
     agentName,
@@ -50,6 +56,7 @@ async function runBenchmark(opts: BenchmarkOptions) {
   for (let i = 0; i < opts.runs; i++) {
     const start = performance.now();
     try {
+      console.log(`[${i + 1}/${opts.runs}] Running benchmark...`);
       const ch = await client.getChallenge();
       const steps = await parseStepsWithOpenRouter(ch.instructions ?? [], {
         model: opts.modelId
@@ -63,8 +70,13 @@ async function runBenchmark(opts: BenchmarkOptions) {
       const end = performance.now();
       durations.push(end - start);
       successes++;
+      console.log(`[${i + 1}/${opts.runs}] Success: ${Number((end - start).toFixed(2))}ms`);
     } catch (err) {
       console.error("benchmark_run_error", { run: i + 1, error: String(err) });
+    }
+
+    if (i < opts.runs - 1 && opts.delay > 0) {
+      await new Promise(r => setTimeout(r, opts.delay));
     }
   }
 
@@ -73,8 +85,10 @@ async function runBenchmark(opts: BenchmarkOptions) {
   const p95Index = sorted.length ? Math.floor(sorted.length * 0.95) - 1 : -1;
   const p95Ms = p95Index >= 0 ? sorted[p95Index] : 0;
 
+  const reportedModelId = opts.tag ? `${opts.modelId} [${opts.tag}]` : (opts.modelId ?? "default-openrouter-model");
+
   const body = {
-    model_id: opts.modelId ?? "default-openrouter-model",
+    model_id: reportedModelId,
     framework: opts.framework,
     agent_name: opts.agentName,
     agent_version: opts.agentVersion,

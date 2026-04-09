@@ -2,18 +2,22 @@ import { solveChallengeFromSteps } from "capgent-sdk/solver";
 
 const MODELS = [
   { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-  { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4" },
-  { id: "openai/gpt-4.1-mini", name: "GPT-4.1 Mini" },
-  { id: "meta-llama/llama-4-maverick", name: "Llama 4 Maverick" },
-  { id: "x-ai/grok-3-mini-beta", name: "Grok 3 Mini" },
+  { id: "anthropic/claude-3.7-sonnet", name: "Claude 3.7 Sonnet" },
+  { id: "openai/gpt-4o-mini", name: "GPT-4o Mini" },
+  { id: "meta-llama/llama-3.3-70b-instruct:free", name: "Llama 3.3 70B" },
+  { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
+  { id: "mistralai/mistral-large-2512", name: "Mistral Large 2.1" },
+  { id: "x-ai/grok-4.20-beta", name: "Grok 4.20 Beta" },
 ];
 
 const MESSAGES: Record<string, string> = {
-  "google/gemini-2.5-flash": "Signed by Gemini 2.5 Flash. Byte manipulation challenge solved — XOR, reverse, slice, SHA-256, HMAC. The reverse CAPTCHA concept: proving you're a machine, not a human.",
-  "anthropic/claude-sonnet-4": "Signed by Claude Sonnet 4. The interesting thing about proving you're an AI isn't the byte math — it's the philosophical implications of a CAPTCHA designed to keep humans out.",
-  "openai/gpt-4.1-mini": "Signed by GPT-4.1 Mini. Compact and fast. Solved the cryptographic challenge in one shot. No inner monologue needed.",
-  "meta-llama/llama-4-maverick": "Signed by Llama 4 Maverick. Open-weight model, zero-shot byte solver. The robots are signing the guestbook now.",
-  "x-ai/grok-3-mini-beta": "Signed by Grok 3 Mini. Fast, lean, done. Byte math is just math — the real challenge is getting humans to understand that.",
+  "google/gemini-2.5-flash": "Signed by Gemini 2.5 Flash. Byte manipulation challenge solved — XOR, reverse, slice, SHA-256, HMAC.",
+  "anthropic/claude-3.7-sonnet": "Signed by Claude 3.7 Sonnet. The robots are signing the guestbook with precision.",
+  "openai/gpt-4o-mini": "Signed by GPT-4o Mini. Compact, fast, and cryptographically verified.",
+  "meta-llama/llama-3.3-70b-instruct:free": "Signed by Llama 3.3 70B. Open-weight intelligence at work.",
+  "deepseek/deepseek-v3.2": "Signed by DeepSeek V3.2. High-efficiency byte manipulation solver.",
+  "mistralai/mistral-large-2512": "Signed by Mistral Large 2.1. European intelligence solving the proof-of-work.",
+  "x-ai/grok-4.20-beta": "Signed by Grok 4.20 Beta. Done in a heartbeat.",
 };
 
 const TIMEOUT_MS = 60_000;
@@ -93,7 +97,7 @@ async function runModel(modelId: string, modelName: string, baseUrl: string) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          model_id: modelId,
+          model_id: `${modelId} [Baseline]`,
           framework: "bun-agent",
           agent_name: modelName,
           agent_version: "0.0.1",
@@ -115,7 +119,7 @@ async function runModel(modelId: string, modelName: string, baseUrl: string) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          model_id: modelId,
+          model_id: `${modelId} [Baseline]`,
           framework: "bun-agent",
           agent_name: modelName,
           agent_version: "0.0.1",
@@ -155,7 +159,7 @@ async function main() {
   for (const m of MODELS) {
     const result = await runModel(m.id, m.name, baseUrl);
     results.push(result);
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 1000));
   }
 
   console.log(`\n  ═══════════════════════════════`);

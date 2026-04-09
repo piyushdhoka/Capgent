@@ -44,15 +44,16 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
     })
   }
 
-  const totalRuns = reports.reduce((a, r) => a + r.runs, 0)
-  const totalSuccesses = reports.reduce((a, r) => a + r.successes, 0)
+  const displayedReports = reports.filter(r => r.runs >= 100)
+  const totalRuns = displayedReports.reduce((a, r) => a + r.runs, 0)
+  const totalSuccesses = displayedReports.reduce((a, r) => a + r.successes, 0)
   const overallSuccessRate = totalRuns > 0 ? Math.round((totalSuccesses / totalRuns) * 100) : 0
   const fastestModel =
-    reports.length > 0
-      ? reports.reduce((best, r) => (r.avg_ms < best.avg_ms && r.runs > 0 ? r : best), reports[0]!)
+    displayedReports.length > 0
+      ? displayedReports.reduce((best, r) => (r.avg_ms < best.avg_ms && r.runs > 0 ? r : best), displayedReports[0]!)
       : null
 
-  const sorted = [...reports].sort((a, b) => {
+  const sorted = [...displayedReports].sort((a, b) => {
     const aRate = a.runs > 0 ? a.successes / a.runs : 0
     const bRate = b.runs > 0 ? b.successes / b.runs : 0
     return bRate !== aRate ? bRate - aRate : a.avg_ms - b.avg_ms
@@ -75,7 +76,7 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
         </p>
       </div>
 
-      {reports.length > 0 && (
+      {displayedReports.length > 0 && (
         <div className="mt-10 grid gap-4 sm:grid-cols-4">
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
@@ -83,7 +84,7 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
                 <ChartBar className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xl font-bold tabular-nums">{reports.length}</p>
+                <p className="text-xl font-bold tabular-nums">{displayedReports.length}</p>
                 <p className="text-[11px] text-muted-foreground">Models Tested</p>
               </div>
             </CardContent>
@@ -120,7 +121,7 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
                   {fastestModel ? `${fastestModel.avg_ms.toFixed(0)}ms` : "—"}
                 </p>
                 <p className="text-[11px] text-muted-foreground truncate">
-                  Fastest{fastestModel ? `: ${fastestModel.model_id.split("/").pop()}` : ""}
+                  Fastest{fastestModel ? `: ${fastestModel.model_id.replace(" [Stability]", "").replace(" [Baseline]", "").split("/").pop()}` : ""}
                 </p>
               </div>
             </CardContent>
@@ -163,7 +164,7 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
             <div className="space-y-5">
               {sorted.map((m, i) => {
                 const successRate = m.runs > 0 ? Math.round((m.successes / m.runs) * 100) : 0
-                const speedScore = maxAvg > 0 ? Math.max(8, Math.round((1 - m.avg_ms / (maxAvg * 1.2)) * 100)) : 50
+                const speedScore = Math.max(5, Math.min(100, (1000 / m.avg_ms) * 100))
                 const barColor =
                   successRate >= 90 ? "from-emerald-500 to-emerald-400"
                   : successRate >= 70 ? "from-emerald-600 to-emerald-500"
@@ -189,7 +190,9 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
                       <div className="flex-1 min-w-0 space-y-2">
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
-                            <span className="font-mono text-sm font-semibold truncate block">{m.model_id}</span>
+                            <span className="font-mono text-sm font-semibold truncate block">
+                              {m.model_id.replace(" [Stability]", "").replace(" [Baseline]", "")}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                               {m.framework} &middot; {m.agent_name}
                             </span>
