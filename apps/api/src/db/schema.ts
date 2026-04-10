@@ -64,3 +64,18 @@ export const emailVerification = pgTable("email_verification", {
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const benchmarkReport = pgTable("benchmark_report", {
+  id: text("id").primaryKey(),
+  model_id: text("model_id").notNull().unique(), // Unique by model_id so we can upsert
+  framework: text("framework").notNull(),
+  agent_name: text("agent_name").notNull(),
+  agent_version: text("agent_version").notNull(),
+  project_id: text("project_id"),
+  runs: integer("runs").notNull().default(0),
+  successes: integer("successes").notNull().default(0),
+  success_runs: integer("success_runs").notNull().default(0),
+  avg_ms: integer("avg_ms").notNull().default(0), // Storing as integers (ms) for robustness
+  p95_ms: integer("p95_ms").notNull().default(0),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+

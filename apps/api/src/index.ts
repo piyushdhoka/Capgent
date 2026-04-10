@@ -27,23 +27,11 @@ import type { ApiKeyRecord, Project } from "./projects/store";
 import { deleteApiKey, deleteProject, getApiKeyById, getProjectById, getProjectForApiKeyHash, listApiKeysForProject, listProjectsForOwner, saveApiKey, saveProject } from "./projects/store";
 import type { GuestbookEntry } from "./guestbook/store";
 import { addGuestbookEntry, getGuestbookEntries, clearGuestbook } from "./guestbook/store";
+import { getBenchmarkReports, saveBenchmarkReport, type BenchmarkReport } from "./benchmarks/store";
 
 const app = new Hono<{ Bindings: Env }>();
 
-type BenchmarkReport = {
-  id: string;
-  model_id: string;
-  framework: string;
-  agent_name: string;
-  agent_version: string;
-  project_id?: string;
-  runs: number;
-  successes: number;
-  success_runs: number;
-  avg_ms: number;
-  p95_ms: number;
-  created_at: string;
-};
+// BenchmarkReport moved to ./benchmarks/store.ts
 
 type AgentRegisterRequest = {
   agent_name?: string;
@@ -753,9 +741,7 @@ app.post("/api/benchmarks/report", async (c) => {
   const incomingAvg = Number.isFinite(incomingAvgRaw) ? Math.max(0, Math.min(incomingAvgRaw, 60_000)) : 0;
   const incomingP95 = Number.isFinite(incomingP95Raw) ? Math.max(0, Math.min(incomingP95Raw, 60_000)) : 0;
 
-  const store = getStore(c.env);
-  const key = "benchmarks:reports";
-  const existing = (await store.getJson<BenchmarkReport[]>(key)) ?? [];
+  const existing = await getBenchmarkReports(c.env);
 
   const modelKey = String(body.model_id).toLowerCase().trim();
   const existingIdx = existing.findIndex((r) => r.model_id.toLowerCase().trim() === modelKey);
@@ -781,11 +767,10 @@ app.post("/api/benchmarks/report", async (c) => {
       runs: totalRuns,
       successes: totalSuccesses,
       success_runs: nextSuccessRuns,
-      avg_ms: Math.round(weightedAvg * 100) / 100,
-      p95_ms: Math.round(weightedP95 * 100) / 100,
+      avg_ms: Math.round(weightedAvg), // Database expects integers
+      p95_ms: Math.round(weightedP95),
       created_at: now
     };
-    existing.splice(existingIdx, 1);
   } else {
     report = {
       id: crypto.randomUUID(),
@@ -793,26 +778,23 @@ app.post("/api/benchmarks/report", async (c) => {
       framework: String(body.framework),
       agent_name: (body.agent_name ?? "unknown-agent").trim() || "unknown-agent",
       agent_version: (body.agent_version ?? "0.0.0").trim() || "0.0.0",
-      // attach project_id only when available to keep backward compatibility
       ...(projectId ? { project_id: projectId } : {}),
       runs: incomingRuns,
       successes: incomingSuccesses,
       success_runs: incomingSuccesses,
-      avg_ms: incomingSuccesses > 0 ? Math.round(incomingAvg * 100) / 100 : 0,
-      p95_ms: incomingSuccesses > 0 ? Math.round(incomingP95 * 100) / 100 : 0,
+      avg_ms: Math.round(incomingAvg),
+      p95_ms: Math.round(incomingP95),
       created_at: now
     };
   }
 
-  const next = [report, ...existing].slice(0, 100);
-  await store.setJson(key, next, 60 * 60 * 24 * 365);
+  await saveBenchmarkReport(c.env, report);
 
   return c.json({ ok: true, report });
 });
 
 app.get("/api/benchmarks", async (c) => {
-  const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
-  const reports = (await store.getJson<BenchmarkReport[]>("benchmarks:reports")) ?? [];
+  const reports = await getBenchmarkReports(c.env);
   return c.json({ reports });
 });
 
@@ -822,8 +804,8 @@ app.delete("/api/benchmarks", async (c) => {
   if (adminKey && header !== adminKey) {
     return c.json({ error: "admin_key_required" }, 401);
   }
-  const store = !forceInMemory(c.env) && canUseRedis(c.env) ? createRedisStore(createRedis(c.env)) : createInMemoryStore();
-  await store.del("benchmarks:reports");
+  const { clearBenchmarks } = await import("./benchmarks/store");
+  await clearBenchmarks(c.env);
   return c.json({ ok: true, cleared: true });
 });
 
