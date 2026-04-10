@@ -9,8 +9,8 @@ function sha256Hex(input: string) {
 }
 
 function getEmailVerificationSiteUrl() {
-  // Prefer an explicit site URL, but keep a safe localhost fallback for dev.
-  return process.env.NEXT_PUBLIC_WEB_BASE_URL ?? "http://localhost:3000"
+  // Prefer an explicit site URL, but keep a safe fallback for prod.
+  return process.env.NEXT_PUBLIC_WEB_BASE_URL ?? "https://capgent.vercel.app"
 }
 
 function getMailEnv() {
