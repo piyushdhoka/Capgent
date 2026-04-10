@@ -59,8 +59,8 @@ async function sendVerificationEmail({ to, token, email }: { to: string; token: 
     from,
     to,
     subject: "Verify your email for Capgent",
-    text: `Hi! Click to verify your email:\n\n${verifyUrl}\n\nIf you did not request this, you can ignore this email.`,
-    html: `<p>Hi!</p><p>Click to verify your email:</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>If you did not request this, you can ignore this email.</p>`,
+    text: `Hi!\n\nPlease confirm your mail by clicking the link below:\n\n${verifyUrl}`,
+    html: `<p>Hi!</p><p><a href="${verifyUrl}">Confirm you mail</a></p>`,
   })
 }
 
