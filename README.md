@@ -16,6 +16,7 @@
 </div>
 
 ---
+<img width="1200" height="630" alt="Capgent — Agent Verification Infrastructure" src="https://github.com/user-attachments/assets/864da466-28cc-444a-be29-d530cb9c1e8a" />
 
 ## What is this?
 
