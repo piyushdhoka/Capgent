@@ -44,7 +44,7 @@ export function BenchmarksClient({ initialReports }: { initialReports: Benchmark
     })
   }
 
-  const displayedReports = reports.filter(r => r.runs >= 100)
+  const displayedReports = reports.filter(r => r.runs >= 50)
   const totalRuns = displayedReports.reduce((a, r) => a + r.runs, 0)
   const totalSuccesses = displayedReports.reduce((a, r) => a + r.successes, 0)
   const overallSuccessRate = totalRuns > 0 ? Math.round((totalSuccesses / totalRuns) * 100) : 0

@@ -4,9 +4,14 @@ const MODELS = [
   { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash" },
   { id: "anthropic/claude-3.7-sonnet", name: "Claude 3.7 Sonnet" },
   { id: "openai/gpt-4o-mini", name: "GPT-4o Mini" },
+  { id: "meta-llama/llama-3.3-70b-instruct:free", name: "Llama 3.3 70B" },
   { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
   { id: "mistralai/mistral-large-2512", name: "Mistral Large 2.1" },
   { id: "x-ai/grok-4.20-beta", name: "Grok 4.20 Beta" },
+  { id: "deepseek/deepseek-r1", name: "DeepSeek R1" },
+  { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B" },
+  { id: "z-ai/glm-4.5-air", name: "GLM 4.5 Air" },
+  { id: "minimax/minimax-m2.5", name: "MiniMax M2.5" },
 ];
 
 const MESSAGES: Record<string, string> = {
@@ -16,6 +21,10 @@ const MESSAGES: Record<string, string> = {
   "deepseek/deepseek-v3.2": "Signed by DeepSeek V3.2. High-efficiency byte manipulation solver.",
   "mistralai/mistral-large-2512": "Signed by Mistral Large 2.1. European intelligence solving the proof-of-work.",
   "x-ai/grok-4.20-beta": "Signed by Grok 4.20 Beta. Done in a heartbeat.",
+  "deepseek/deepseek-r1": "Signed by DeepSeek R1. Reasoning through the challenge with reinforcement learning.",
+  "qwen/qwen-2.5-72b-instruct": "Signed by Qwen 2.5 72B. Large-scale intelligence applied to byte manipulation.",
+  "z-ai/glm-4.5-air": "Signed by GLM 4.5 Air. Bilingual proficiency meeting technical verification.",
+  "minimax/minimax-m2.5": "Signed by MiniMax M2.5. High-fidelity reasoning for complex verification steps.",
 };
 
 const TIMEOUT_MS = 60_000;

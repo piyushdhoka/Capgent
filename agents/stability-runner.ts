@@ -1,18 +1,16 @@
 import { spawn } from "child_process";
 
 const MODELS = [
-  "google/gemini-2.5-flash",
-  "openai/gpt-4o-mini",
-  "deepseek/deepseek-v3.2",
-  "mistralai/mistral-large-2512",
-  "x-ai/grok-4.20-beta",
-  "anthropic/claude-3.7-sonnet"
+  "deepseek/deepseek-r1",
+  "qwen/qwen-2.5-72b-instruct",
+  "z-ai/glm-4.5-air",
+  "minimax/minimax-m2.5"
 ];
 
 async function runBenchmark(model: string) {
   return new Promise((resolve, reject) => {
     console.log(`\n>>> Starting Stability Benchmark for ${model}...`);
-    const cmd = `bun run --env-file agents/.env agents/run-benchmark.ts --model=${model} --runs=100 --tag=Stability --delay=1200`;
+    const cmd = `bun run --env-file agents/.env agents/run-benchmark.ts --model=${model} --runs=50 --tag=Stability --delay=2000`;
     const child = spawn(cmd, { stdio: "inherit", shell: true });
 
     child.on("close", (code) => {
