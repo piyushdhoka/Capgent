@@ -3,7 +3,6 @@ import { spawn } from "child_process";
 const MODELS = [
   "google/gemini-2.5-flash",
   "openai/gpt-4o-mini",
-  "meta-llama/llama-3.3-70b-instruct:free",
   "deepseek/deepseek-v3.2",
   "mistralai/mistral-large-2512",
   "x-ai/grok-4.20-beta",
