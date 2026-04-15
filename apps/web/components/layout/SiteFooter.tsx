@@ -5,6 +5,7 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { GithubLogo, LinkedinLogo, XLogo } from "@phosphor-icons/react"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
+import { PeerlistBadge } from "@/components/ui/peerlist-badge"
 
 type FooterLink = { href: string; label: string; external?: boolean }
 type FooterGroup = { title: string; links: FooterLink[] }
@@ -113,16 +114,23 @@ export function SiteFooter() {
             <span className="font-heading text-base font-bold tracking-tight">Capgent</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <SocialIcon href="https://www.linkedin.com/in/piyushdhoka27" label="LinkedIn">
-              <LinkedinLogo className="h-4 w-4" />
-            </SocialIcon>
-            <SocialIcon href="https://x.com/piyush_dhoka27" label="X">
-              <XLogo className="h-4 w-4" />
-            </SocialIcon>
-            <SocialIcon href="https://github.com/piyushdhoka" label="GitHub">
-              <GithubLogo className="h-4 w-4" />
-            </SocialIcon>
+          <div className="flex flex-col items-center gap-4 md:flex-row">
+            {/* Peerlist Badge */}
+            <div className="scale-75 origin-right md:scale-100">
+              <PeerlistBadge />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <SocialIcon href="https://www.linkedin.com/in/piyushdhoka27" label="LinkedIn">
+                <LinkedinLogo className="h-4 w-4" />
+              </SocialIcon>
+              <SocialIcon href="https://x.com/piyush_dhoka27" label="X">
+                <XLogo className="h-4 w-4" />
+              </SocialIcon>
+              <SocialIcon href="https://github.com/piyushdhoka" label="GitHub">
+                <GithubLogo className="h-4 w-4" />
+              </SocialIcon>
+            </div>
           </div>
         </div>
 

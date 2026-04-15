@@ -9,6 +9,7 @@ import { useState } from "react"
 import { CanvasText } from "@/components/ui/canvas-text"
 import { CapgentVisualization } from "@/components/landing/sections/CapgentVisualization"
 import { LandingLogoCloud } from "@/components/landing/sections/LogoCloud"
+import { PeerlistBadge } from "@/components/ui/peerlist-badge"
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -133,6 +134,11 @@ export function Hero() {
               >
                 <Link href="/docs">Read the Docs</Link>
               </Button>
+            </motion.div>
+
+            {/* Peerlist Badge */}
+            <motion.div variants={fadeUp} className="mt-6 flex justify-start scale-125 origin-left">
+              <PeerlistBadge />
             </motion.div>
 
             <motion.div
